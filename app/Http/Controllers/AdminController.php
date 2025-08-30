@@ -9,16 +9,6 @@ class AdminController extends Controller
         return view('admin.dashboard');
     }
 
-    public function clients()
-    {
-        return view('admin.clients');
-    }
-
-    public function sales()
-    {
-        return view('admin.sales');
-    }
-
     public function payments()
     {
         return view('admin.payments');
