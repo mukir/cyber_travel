@@ -89,6 +89,35 @@
             </x-responsive-nav-link>
 
             @endif
+
+            @if(Auth::user()->is_admin())
+
+            <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                {{ __('Admin Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.clients')" :active="request()->routeIs('admin.clients')">
+                {{ __('Clients') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.sales')" :active="request()->routeIs('admin.sales')">
+                {{ __('Sales') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.payments')" :active="request()->routeIs('admin.payments')">
+                {{ __('Payments') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.reports')" :active="request()->routeIs('admin.reports')">
+                {{ __('Reports') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.communications')" :active="request()->routeIs('admin.communications')">
+                {{ __('Communication') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.logs')" :active="request()->routeIs('admin.logs')">
+                {{ __('Logs') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.notes')" :active="request()->routeIs('admin.notes')">
+                {{ __('Notes') }}
+            </x-responsive-nav-link>
+
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

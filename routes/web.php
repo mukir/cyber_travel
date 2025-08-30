@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -22,6 +23,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/client/biodata', [ClientController::class, 'storeBiodata'])->name('client.biodata.store');
     Route::get('/client/documents', [ClientController::class, 'documents'])->name('client.documents');
     Route::post('/client/documents', [ClientController::class, 'uploadDocument'])->name('client.documents.upload');
+
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/clients', [AdminController::class, 'clients'])->name('clients');
+        Route::get('/sales', [AdminController::class, 'sales'])->name('sales');
+        Route::get('/payments', [AdminController::class, 'payments'])->name('payments');
+        Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+        Route::get('/communications', [AdminController::class, 'communications'])->name('communications');
+        Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
+        Route::get('/notes', [AdminController::class, 'notes'])->name('notes');
+    });
 });
 
 require __DIR__.'/auth.php';
