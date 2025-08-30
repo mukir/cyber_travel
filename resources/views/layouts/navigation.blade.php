@@ -87,6 +87,12 @@
             <x-responsive-nav-link :href="route('client.documents')" :active="request()->routeIs('client.documents')">
                 {{ __('Documents') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('client.bookings')" :active="request()->routeIs('client.bookings')">
+                {{ __('My Bookings') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')">
+                {{ __('Apply for Job') }}
+            </x-responsive-nav-link>
 
             @endif
 
@@ -97,6 +103,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.clients')" :active="request()->routeIs('admin.clients')">
                 {{ __('Clients') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.jobs.index')" :active="request()->routeIs('admin.jobs.*')">
+                {{ __('Jobs') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.sales')" :active="request()->routeIs('admin.sales')">
                 {{ __('Sales') }}

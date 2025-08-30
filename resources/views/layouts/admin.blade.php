@@ -6,11 +6,20 @@
                     <x-nav-link :href="route('admin.clients')" :active="request()->routeIs('admin.clients')">
                         {{ __('Clients') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('admin.jobs.index')" :active="request()->routeIs('admin.jobs.*')">
+                        {{ __('Jobs') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('admin.leads.index')" :active="request()->routeIs('admin.leads.*')">
+                        {{ __('Leads') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('admin.sales')" :active="request()->routeIs('admin.sales')">
                         {{ __('Sales') }}
                     </x-nav-link>
                     <x-nav-link :href="route('admin.payments')" :active="request()->routeIs('admin.payments')">
                         {{ __('Payments') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('admin.targets.index')" :active="request()->routeIs('admin.targets.*')">
+                        {{ __('Targets') }}
                     </x-nav-link>
                     <x-nav-link :href="route('admin.reports')" :active="request()->routeIs('admin.reports')">
                         {{ __('Reports') }}
@@ -25,4 +34,3 @@
                         {{ __('Notes') }}
                     </x-nav-link>
                     @endif
-

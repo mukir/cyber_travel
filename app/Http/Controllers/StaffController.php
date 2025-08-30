@@ -6,27 +6,76 @@ class StaffController extends Controller
 {
     public function dashboard()
     {
-        return view('staff.dashboard');
+        $user = auth()->user();
+        $leadsCount = \App\Models\Lead::where('sales_rep_id', $user->id)->count();
+        $dueCount = \App\Models\Lead::where('sales_rep_id', $user->id)
+            ->whereNotNull('next_follow_up')->whereDate('next_follow_up', '<=', today())->count();
+        $commissionMonth = \App\Models\Commission::where('staff_id', $user->id)
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
+        $wonCount = \App\Models\Lead::where('sales_rep_id', $user->id)->where('stage', 'won')->count();
+
+        $targetModel = \App\Models\SalesTarget::where('staff_id', $user->id)
+            ->where('start_date', '<=', today())->where('end_date', '>=', today())
+            ->orderByDesc('start_date')->first();
+        $target = optional($targetModel)->target_amount ?: 0;
+        $achieved = \App\Models\Payment::whereHas('booking', function($q) use ($user){
+            $q->where('referred_by_id', $user->id);
+        })->whereBetween('created_at', [optional($targetModel)->start_date ?? now()->startOfMonth(), optional($targetModel)->end_date ?? now()->endOfMonth()])->sum('amount');
+        $targetPeriod = $targetModel ? $targetModel->start_date->format('M d').' - '.$targetModel->end_date->format('M d, Y') : now()->startOfMonth()->format('M d').' - '.now()->endOfMonth()->format('M d, Y');
+
+        return view('staff.dashboard', compact('leadsCount','dueCount','commissionMonth','wonCount','target','achieved','targetPeriod'));
     }
 
     public function leads()
     {
-        return view('staff.leads');
+        $user = auth()->user();
+        $q = \App\Models\Lead::where('sales_rep_id', $user->id)->orderByDesc('created_at');
+        if (request('stage')) $q->where('stage', request('stage'));
+        if (request('status')) $q->where('status', request('status'));
+
+        if (request()->isMethod('post')) {
+            $data = request()->validate([
+                'name' => 'required|string',
+                'email' => 'nullable|email',
+                'phone' => 'nullable|string',
+                'next_follow_up' => 'nullable|date',
+            ]);
+            $data['sales_rep_id'] = $user->id;
+            \App\Models\Lead::create($data);
+            return redirect()->route('staff.leads')->with('success', 'Lead added');
+        }
+
+        $leads = $q->paginate(15)->appends(request()->query());
+        return view('staff.leads', compact('leads'));
     }
 
     public function notes()
     {
-        return view('staff.notes');
+        return redirect()->route('staff.leads');
     }
 
     public function reminders()
     {
-        return view('staff.reminders');
+        $user = auth()->user();
+        $leads = \App\Models\Lead::where('sales_rep_id', $user->id)
+            ->whereNotNull('next_follow_up')->whereDate('next_follow_up', '<=', today())
+            ->orderBy('next_follow_up')->paginate(15);
+        return view('staff.reminders', compact('leads'));
     }
 
     public function commissions()
     {
-        return view('staff.commissions');
+        $user = auth()->user();
+        $base = \App\Models\Payment::where('status', 'paid')
+            ->whereHas('booking', function($q) use ($user){ $q->where('referred_by_id', $user->id); });
+        $payments = (clone $base)->with('booking')->orderByDesc('created_at')->paginate(15);
+        $total = (clone $base)->sum('amount');
+        $rate = (float)config('sales.commission_rate', (float)env('SALES_COMMISSION_RATE', 10));
+        $commission = (clone $base)->get()->sum(function($p) use ($rate){
+            $row = \App\Models\Commission::where('payment_id', $p->id)->first();
+            return $row?->amount ?? round(((float)$p->amount) * $rate / 100, 2);
+        });
+        return view('staff.commissions', compact('payments','total','commission','rate'));
     }
 
     public function reports()
@@ -34,23 +83,147 @@ class StaffController extends Controller
         return view('staff.reports');
     }
 
+    // Export commissions CSV for the authenticated staff
+    public function commissionsCsv()
+    {
+        $user = auth()->user();
+        $from = request('from') ? now()->parse(request('from'))->startOfDay() : now()->startOfMonth();
+        $to   = request('to') ? now()->parse(request('to'))->endOfDay() : now()->endOfMonth();
+
+        $payments = \App\Models\Payment::with('booking')
+            ->where('status', 'paid')
+            ->whereHas('booking', fn($q) => $q->where('referred_by_id', $user->id))
+            ->whereBetween('created_at', [$from, $to])
+            ->orderBy('created_at')
+            ->get();
+
+        $rateDefault = (float)config('sales.commission_rate', (float)env('SALES_COMMISSION_RATE', 10));
+
+        $out = fopen('php://temp', 'w+');
+        fputcsv($out, ['Date','Booking','Client','Method','Amount','Rate %','Commission']);
+        foreach ($payments as $p) {
+            $comm = \App\Models\Commission::where('payment_id', $p->id)->first();
+            $rate = $comm?->rate ?? $rateDefault;
+            $commission = $comm?->amount ?? round(((float)$p->amount) * $rate / 100, 2);
+            fputcsv($out, [
+                $p->created_at->format('Y-m-d H:i'),
+                'BK'.$p->booking_id,
+                optional($p->booking)->customer_name,
+                $p->method,
+                number_format($p->amount, 2),
+                $rate,
+                number_format($commission, 2),
+            ]);
+        }
+        rewind($out);
+        $csv = stream_get_contents($out);
+        fclose($out);
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="commissions.csv"',
+        ]);
+    }
+
+    // Export commissions PDF for the authenticated staff
+    public function commissionsPdf()
+    {
+        $user = auth()->user();
+        $from = request('from') ? now()->parse(request('from'))->startOfDay() : now()->startOfMonth();
+        $to   = request('to') ? now()->parse(request('to'))->endOfDay() : now()->endOfMonth();
+
+        $payments = \App\Models\Payment::with('booking')
+            ->where('status', 'paid')
+            ->whereHas('booking', fn($q) => $q->where('referred_by_id', $user->id))
+            ->whereBetween('created_at', [$from, $to])
+            ->orderBy('created_at')
+            ->get();
+
+        $rateDefault = (float)config('sales.commission_rate', (float)env('SALES_COMMISSION_RATE', 10));
+        $rows = $payments->map(function ($p) use ($rateDefault) {
+            $comm = \App\Models\Commission::where('payment_id', $p->id)->first();
+            $rate = $comm?->rate ?? $rateDefault;
+            $commission = $comm?->amount ?? round(((float)$p->amount) * $rate / 100, 2);
+            return [
+                'date' => $p->created_at->format('Y-m-d H:i'),
+                'booking' => 'BK'.$p->booking_id,
+                'client' => optional($p->booking)->customer_name,
+                'method' => $p->method,
+                'amount' => number_format($p->amount, 2),
+                'rate' => $rate,
+                'commission' => number_format($commission, 2),
+            ];
+        });
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.commissions', [
+            'rows' => $rows,
+            'title' => 'Commission Report',
+            'period' => [$from, $to],
+        ]);
+        return $pdf->download('commissions.pdf');
+    }
+
     public function conversions()
     {
-        return view('staff.conversions');
+        $user = auth()->user();
+        $won = \App\Models\Lead::where('sales_rep_id', $user->id)->where('stage', 'won')->count();
+        $total = \App\Models\Lead::where('sales_rep_id', $user->id)->count();
+        $rate = $total ? round($won * 100 / $total, 1) : 0;
+        return view('staff.conversions', compact('won','total','rate'));
     }
 
     public function payments()
     {
-        return view('staff.payments');
+        return redirect()->route('staff.commissions');
     }
 
     public function targets()
     {
-        return view('staff.targets');
+        $user = auth()->user();
+        $target = \App\Models\SalesTarget::where('staff_id', $user->id)
+            ->where('start_date', '<=', today())->where('end_date', '>=', today())
+            ->orderByDesc('start_date')->first();
+        $achieved = \App\Models\Payment::whereHas('booking', function($q) use ($user){
+            $q->where('referred_by_id', $user->id);
+        })->whereBetween('created_at', [optional($target)->start_date ?? now()->startOfMonth(), optional($target)->end_date ?? now()->endOfMonth()])->sum('amount');
+        return view('staff.targets', compact('target','achieved'));
     }
 
     public function referrals()
     {
-        return view('staff.referrals');
+        $user = auth()->user();
+        if (!$user->referral_code) {
+            $user->referral_code = substr(bin2hex(random_bytes(8)),0,8);
+            $user->save();
+        }
+        $link = route('ref', $user->referral_code);
+        $referredCount = \App\Models\Booking::where('referred_by_id', $user->id)->count();
+        $bookings = \App\Models\Booking::with(['job','package'])
+            ->where('referred_by_id', $user->id)
+            ->orderByDesc('created_at')
+            ->paginate(10);
+        return view('staff.referrals', compact('link','referredCount','bookings'));
+    }
+
+    public function saveLeadNote($leadId)
+    {
+        $lead = \App\Models\Lead::where('id', $leadId)->where('sales_rep_id', auth()->id())->firstOrFail();
+        $data = request()->validate([
+            'content' => 'required|string',
+            'next_follow_up' => 'nullable|date',
+            'stage' => 'nullable|string',
+            'status' => 'nullable|string',
+        ]);
+        \App\Models\LeadNote::create([
+            'lead_id' => $lead->id,
+            'sales_rep_id' => auth()->id(),
+            'content' => $data['content'],
+            'next_follow_up' => $data['next_follow_up'] ?? null,
+        ]);
+        $lead->update([
+            'next_follow_up' => $data['next_follow_up'] ?? $lead->next_follow_up,
+            'stage' => $data['stage'] ?? $lead->stage,
+            'status' => $data['status'] ?? $lead->status,
+        ]);
+        return redirect()->route('staff.leads')->with('success', 'Note saved');
     }
 }

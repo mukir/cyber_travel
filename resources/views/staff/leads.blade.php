@@ -1,16 +1,101 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Lead Management') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <p>Manage and assign leads.</p>
-            </div>
+  <x-slot name="header">
+    <div class="flex items-center justify-between">
+      <h2 class="font-semibold text-xl text-gray-800 leading-tight">Leads</h2>
+      <form action="{{ route('staff.leads') }}" method="GET" class="text-sm flex items-end gap-2">
+        <div>
+          <label class="block text-gray-600">Stage</label>
+          <select name="stage" class="mt-1 rounded border p-2">
+            <option value="">All</option>
+            @foreach(['new','contacted','qualified','won','lost'] as $s)
+              <option value="{{ $s }}" @selected(request('stage')===$s)>{{ ucfirst($s) }}</option>
+            @endforeach
+          </select>
         </div>
+        <div>
+          <label class="block text-gray-600">Status</label>
+          <select name="status" class="mt-1 rounded border p-2">
+            <option value="">All</option>
+            @foreach(['open','closed'] as $s)
+              <option value="{{ $s }}" @selected(request('status')===$s)>{{ ucfirst($s) }}</option>
+            @endforeach
+          </select>
+        </div>
+        <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold">Filter</button>
+      </form>
     </div>
-</x-app-layout>
+  </x-slot>
 
+  <div class="py-8">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+      <div class="bg-white p-6 shadow sm:rounded-lg">
+        <form action="{{ route('staff.leads') }}" method="POST" class="grid md:grid-cols-5 gap-3 text-sm">
+          @csrf
+          <div>
+            <label class="block text-gray-600">Name</label>
+            <input name="name" class="mt-1 w-full rounded border p-2" required />
+          </div>
+          <div>
+            <label class="block text-gray-600">Email</label>
+            <input name="email" class="mt-1 w-full rounded border p-2" />
+          </div>
+          <div>
+            <label class="block text-gray-600">Phone</label>
+            <input name="phone" class="mt-1 w-full rounded border p-2" />
+          </div>
+          <div>
+            <label class="block text-gray-600">Next follow-up</label>
+            <input type="date" name="next_follow_up" class="mt-1 w-full rounded border p-2" />
+          </div>
+          <div class="flex items-end">
+            <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold">Add Lead</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage / Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Follow-up</th>
+              <th class="px-6 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            @forelse(($leads ?? []) as $lead)
+              <tr>
+                <td class="px-6 py-4 text-sm text-gray-900">{{ $lead->name }}</td>
+                <td class="px-6 py-4 text-sm text-gray-700">
+                  <div>{{ $lead->email }}</div>
+                  <div class="text-xs text-gray-500">{{ $lead->phone }}</div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-700 capitalize">{{ $lead->stage }} / {{ $lead->status }}</td>
+                <td class="px-6 py-4 text-sm text-gray-700">{{ $lead->next_follow_up ? $lead->next_follow_up->format('Y-m-d') : '—' }}</td>
+                <td class="px-6 py-4 text-sm text-right">
+                  <form action="{{ route('staff.leads.note', $lead->id) }}" method="POST" class="inline">
+                    @csrf
+                    <input type="hidden" name="stage" value="{{ $lead->stage }}" />
+                    <input type="hidden" name="status" value="{{ $lead->status }}" />
+                    <input name="content" placeholder="Add note" class="rounded border p-1 text-sm w-48" />
+                    <input type="date" name="next_follow_up" class="rounded border p-1 text-sm" />
+                    <button class="rounded bg-slate-700 px-3 py-1.5 text-white text-sm">Save</button>
+                  </form>
+                </td>
+              </tr>
+            @empty
+              <tr>
+                <td colspan="5" class="px-6 py-6 text-sm text-gray-500">No leads yet.</td>
+              </tr>
+            @endforelse
+          </tbody>
+        </table>
+      </div>
+      @if(isset($leads))
+        <div class="mt-4">{{ $leads->links() }}</div>
+      @endif
+    </div>
+  </div>
+</x-app-layout>

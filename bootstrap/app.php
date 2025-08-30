@@ -22,6 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff'    => \App\Http\Middleware\StaffMiddleware::class,
         ]);
 
+        // Exempt external callbacks from CSRF validation
+        $middleware->validateCsrfTokens(except: [
+            'payments/mpesa/stk/callback',
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ClientDocument;
 use App\Models\ClientProfile;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,7 +21,74 @@ class ClientController extends Controller
         $requiredDocs = collect(['passport', 'good_conduct', 'cv', 'photo']);
         $missingDocs = $requiredDocs->diff($documents->pluck('type'));
 
-        return view('client.dashboard', compact('profile', 'documents', 'missingDocs'));
+        // Determine progress stage based on profile + bookings
+        $paidBookings = Booking::where('user_id', Auth::id())->where('status', 'paid')->count();
+        $anyBookings = Booking::where('user_id', Auth::id())->exists();
+
+        $status = strtolower((string)($profile->status ?? ''));
+        $stage = 1; // 1: Registration, 2: Payment, 3: Processing, 4: Complete
+
+        if ($paidBookings > 0) {
+            $stage = max($stage, 2);
+        } elseif ($anyBookings) {
+            // booking exists but not paid -> still at Payment stage
+            $stage = max($stage, 2);
+        }
+
+        if ($profile->interview_date || in_array($status, ['processing', 'interview', 'interview scheduled', 'approved', 'in progress'])) {
+            $stage = max($stage, 3);
+        }
+
+        if ($profile->travel_date || in_array($status, ['complete', 'completed', 'travelled', 'done'])) {
+            $stage = 4;
+        }
+
+        $stages = [
+            ['key' => 'registration', 'label' => 'Registration', 'done' => $stage >= 1],
+            ['key' => 'payment', 'label' => 'Payment', 'done' => $stage >= 2],
+            ['key' => 'processing', 'label' => 'Processing', 'done' => $stage >= 3],
+            ['key' => 'complete', 'label' => 'Complete', 'done' => $stage >= 4],
+        ];
+
+        // Pending actions suggestions
+        $pendingActions = [];
+        if ($missingDocs->isNotEmpty()) {
+            $pendingActions[] = [
+                'label' => 'Upload missing documents: '. $missingDocs->implode(', '),
+                'route' => route('client.documents'),
+            ];
+        }
+        if ($paidBookings === 0) {
+            $pendingActions[] = [
+                'label' => $anyBookings ? 'Complete payment for your booking' : 'Book a package to proceed with payment',
+                'route' => route('jobs.index'),
+            ];
+        }
+        if (empty($profile->interview_date) && $stage < 4) {
+            $pendingActions[] = [
+                'label' => 'Interview date not set yet',
+                'route' => null,
+            ];
+        }
+
+        // Latest booking and next milestone
+        $latestBooking = Booking::with(['job','package'])
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->first();
+
+        $nextMilestone = match ($stage) {
+            1 => 'Payment',
+            2 => 'Processing',
+            3 => 'Complete',
+            default => null, // Completed
+        };
+
+        return view('client.dashboard', compact(
+            'profile', 'documents', 'missingDocs',
+            'stages', 'stage', 'pendingActions',
+            'latestBooking', 'nextMilestone'
+        ));
     }
 
     public function editBiodata()
@@ -77,5 +145,15 @@ class ClientController extends Controller
         ]);
 
         return redirect()->route('client.documents');
+    }
+
+    public function bookings()
+    {
+        $bookings = Booking::with(['job', 'package'])
+            ->where('user_id', Auth::id())
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        return view('client.bookings', compact('bookings'));
     }
 }

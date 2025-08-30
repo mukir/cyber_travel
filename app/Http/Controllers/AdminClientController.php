@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
 use App\Models\ClientDocument;
+use App\Models\ClientProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -38,7 +39,9 @@ class AdminClientController extends Controller
 
     public function edit(User $client)
     {
-        return view('admin.clients.edit', compact('client'));
+        $profile = ClientProfile::firstOrNew(['user_id' => $client->id]);
+        $staff = User::where('role', UserRole::Staff)->orderBy('name')->get();
+        return view('admin.clients.edit', compact('client', 'profile', 'staff'));
     }
 
     public function update(Request $request, User $client)
@@ -47,6 +50,7 @@ class AdminClientController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $client->id,
             'password' => 'nullable|string|min:8',
+            'sales_rep_id' => 'nullable|exists:users,id',
         ]);
 
         if (!empty($data['password'])) {
@@ -55,7 +59,14 @@ class AdminClientController extends Controller
             unset($data['password']);
         }
 
-        $client->update($data);
+        $client->update(collect($data)->only(['name','email','password'])->toArray());
+
+        // Update client profile for sales rep assignment
+        $profile = ClientProfile::firstOrNew(['user_id' => $client->id]);
+        $profile->fill(['sales_rep_id' => $data['sales_rep_id'] ?? null]);
+        if (!$profile->name) { $profile->name = $client->name; }
+        if (!$profile->email) { $profile->email = $client->email; }
+        $profile->save();
 
         return redirect()->route('admin.clients');
     }
@@ -84,4 +95,3 @@ class AdminClientController extends Controller
         return redirect()->back();
     }
 }
-

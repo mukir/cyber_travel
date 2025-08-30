@@ -20,6 +20,15 @@
                         <input type="email" name="email" value="{{ $client->email }}" class="border rounded w-full" required>
                     </div>
                     <div>
+                        <label>Assigned Sales Rep</label>
+                        <select name="sales_rep_id" class="border rounded w-full">
+                            <option value="">-- Unassigned --</option>
+                            @foreach($staff as $rep)
+                                <option value="{{ $rep->id }}" @selected(optional($profile)->sales_rep_id == $rep->id)>{{ $rep->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
                         <label>Password (leave blank to keep current)</label>
                         <input type="password" name="password" class="border rounded w-full">
                     </div>
@@ -32,4 +41,3 @@
         </div>
     </div>
 </x-app-layout>
-
