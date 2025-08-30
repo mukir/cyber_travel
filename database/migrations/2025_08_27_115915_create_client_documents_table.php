@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('type');
             $table->string('path');
+            $table->boolean('validated')->default(false);
             $table->timestamps();
         });
     }

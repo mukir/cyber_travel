@@ -4,6 +4,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\AdminClientController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,7 +28,16 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-        Route::get('/clients', [AdminController::class, 'clients'])->name('clients');
+
+        Route::get('/clients', [AdminClientController::class, 'index'])->name('clients');
+        Route::get('/clients/create', [AdminClientController::class, 'create'])->name('clients.create');
+        Route::post('/clients', [AdminClientController::class, 'store'])->name('clients.store');
+        Route::get('/clients/{client}/edit', [AdminClientController::class, 'edit'])->name('clients.edit');
+        Route::put('/clients/{client}', [AdminClientController::class, 'update'])->name('clients.update');
+        Route::delete('/clients/{client}', [AdminClientController::class, 'destroy'])->name('clients.destroy');
+        Route::get('/clients/{client}/documents', [AdminClientController::class, 'documents'])->name('clients.documents');
+        Route::post('/clients/{client}/documents/{document}/validate', [AdminClientController::class, 'validateDocument'])->name('clients.documents.validate');
+
         Route::get('/sales', [AdminController::class, 'sales'])->name('sales');
         Route::get('/payments', [AdminController::class, 'payments'])->name('payments');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
