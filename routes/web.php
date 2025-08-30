@@ -3,6 +3,7 @@
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -33,6 +34,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/communications', [AdminController::class, 'communications'])->name('communications');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
         Route::get('/notes', [AdminController::class, 'notes'])->name('notes');
+    });
+
+    Route::middleware('staff')->prefix('staff')->name('staff.')->group(function () {
+        Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
+        Route::get('/leads', [StaffController::class, 'leads'])->name('leads');
+        Route::get('/notes', [StaffController::class, 'notes'])->name('notes');
+        Route::get('/reminders', [StaffController::class, 'reminders'])->name('reminders');
+        Route::get('/commissions', [StaffController::class, 'commissions'])->name('commissions');
+        Route::get('/reports', [StaffController::class, 'reports'])->name('reports');
+        Route::get('/conversions', [StaffController::class, 'conversions'])->name('conversions');
+        Route::get('/payments', [StaffController::class, 'payments'])->name('payments');
+        Route::get('/targets', [StaffController::class, 'targets'])->name('targets');
+        Route::get('/referrals', [StaffController::class, 'referrals'])->name('referrals');
     });
 });
 
