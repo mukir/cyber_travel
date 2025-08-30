@@ -11,7 +11,7 @@ class ClientDocument extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'type', 'path',
+        'user_id', 'type', 'path', 'validated',
     ];
 
     public function user(): BelongsTo

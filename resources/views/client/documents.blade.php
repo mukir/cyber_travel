@@ -33,7 +33,11 @@
                 <h3 class="font-medium mb-4">Uploaded Documents</h3>
                 <ul>
                     @forelse($documents as $doc)
-                        <li class="mb-2">{{ ucfirst(str_replace('_', ' ', $doc->type)) }} - <a href="{{ Storage::url($doc->path) }}" class="text-blue-500" target="_blank">View</a></li>
+                        <li class="mb-2">
+                            {{ ucfirst(str_replace('_', ' ', $doc->type)) }} -
+                            <a href="{{ Storage::url($doc->path) }}" class="text-blue-500" target="_blank">View</a>
+                            ({{ $doc->validated ? 'Validated' : 'Pending' }})
+                        </li>
                     @empty
                         <li>No documents uploaded.</li>
                     @endforelse
