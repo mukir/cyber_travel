@@ -9,7 +9,7 @@
 <body class="min-h-screen bg-slate-50 text-slate-900">
   <main class="max-w-2xl mx-auto px-4 py-20 text-center">
     <h1 class="text-4xl font-extrabold">Cyber Travel</h1>
-    <p class="mt-3 text-slate-600">Laravel is running. Auth will be installed next.</p>
+    <p class="mt-3 text-slate-600"> Personalized travel plans for every client</p>
 
     <div class="mt-8 flex items-center justify-center gap-4">
       @if (Route::has('login'))
