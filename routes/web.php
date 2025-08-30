@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\AdminClientController;
+use App\Http\Controllers\AdminSaleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -38,7 +39,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/clients/{client}/documents', [AdminClientController::class, 'documents'])->name('clients.documents');
         Route::post('/clients/{client}/documents/{document}/validate', [AdminClientController::class, 'validateDocument'])->name('clients.documents.validate');
 
-        Route::get('/sales', [AdminController::class, 'sales'])->name('sales');
+        Route::get('/sales', [AdminSaleController::class, 'index'])->name('sales');
+        Route::get('/sales/create', [AdminSaleController::class, 'create'])->name('sales.create');
+        Route::post('/sales', [AdminSaleController::class, 'store'])->name('sales.store');
+        Route::get('/sales/{sale}/edit', [AdminSaleController::class, 'edit'])->name('sales.edit');
+        Route::put('/sales/{sale}', [AdminSaleController::class, 'update'])->name('sales.update');
+        Route::delete('/sales/{sale}', [AdminSaleController::class, 'destroy'])->name('sales.destroy');
         Route::get('/payments', [AdminController::class, 'payments'])->name('payments');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
         Route::get('/communications', [AdminController::class, 'communications'])->name('communications');
