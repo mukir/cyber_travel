@@ -1,7 +1,7 @@
                    @if(Auth::user()->is_admin())
 
                     <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                        {{ __('Admin Dashboard') }}
+                        {{ __('Dashboard') }}
                     </x-nav-link>
                     <x-nav-link :href="route('admin.clients')" :active="request()->routeIs('admin.clients')">
                         {{ __('Clients') }}
