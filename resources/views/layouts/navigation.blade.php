@@ -118,6 +118,41 @@
             </x-responsive-nav-link>
 
             @endif
+
+            @if(Auth::user()->is_staff())
+
+            <x-responsive-nav-link :href="route('staff.dashboard')" :active="request()->routeIs('staff.dashboard')">
+                {{ __('Sales Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.leads')" :active="request()->routeIs('staff.leads')">
+                {{ __('Leads') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.notes')" :active="request()->routeIs('staff.notes')">
+                {{ __('Client Notes') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.reminders')" :active="request()->routeIs('staff.reminders')">
+                {{ __('Reminders') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.commissions')" :active="request()->routeIs('staff.commissions')">
+                {{ __('Commissions') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.reports')" :active="request()->routeIs('staff.reports')">
+                {{ __('Reports') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.conversions')" :active="request()->routeIs('staff.conversions')">
+                {{ __('Conversions') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.payments')" :active="request()->routeIs('staff.payments')">
+                {{ __('Payment History') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.targets')" :active="request()->routeIs('staff.targets')">
+                {{ __('Targets') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.referrals')" :active="request()->routeIs('staff.referrals')">
+                {{ __('Referrals') }}
+            </x-responsive-nav-link>
+
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
