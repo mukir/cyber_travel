@@ -15,15 +15,11 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('client.dashboard')" :active="request()->routeIs('client.dashboard')">
-                        {{ __('Client Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('client.biodata')" :active="request()->routeIs('client.biodata')">
-                        {{ __('Bio Data') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('client.documents')" :active="request()->routeIs('client.documents')">
-                        {{ __('Documents') }}
-                    </x-nav-link>
+
+@include('layouts.client')
+@include('layouts.admin')
+@include('layouts.staff')
+
                 </div>
             </div>
 
@@ -79,6 +75,9 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+                   @if(Auth::user()->is_client())
+
             <x-responsive-nav-link :href="route('client.dashboard')" :active="request()->routeIs('client.dashboard')">
                 {{ __('Client Dashboard') }}
             </x-responsive-nav-link>
@@ -88,6 +87,8 @@
             <x-responsive-nav-link :href="route('client.documents')" :active="request()->routeIs('client.documents')">
                 {{ __('Documents') }}
             </x-responsive-nav-link>
+
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
