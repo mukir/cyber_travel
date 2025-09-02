@@ -107,7 +107,7 @@ class PaymentController extends Controller
     }
     public function payBooking(Request $request, Booking $booking)
     {
-        abort_unless($booking->user_id === Auth::id(), 403);
+        abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         if ($booking->status === 'paid') {
             return back()->with('success', 'This booking is already paid.');
         }
@@ -160,7 +160,7 @@ class PaymentController extends Controller
 
     public function verifyBooking(Request $request, Booking $booking)
     {
-        abort_unless($booking->user_id === Auth::id(), 403);
+        abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         if (!$booking->mpesa_checkout_id) {
             return back()->with('error', 'No payment to verify for this booking.');
         }
@@ -265,7 +265,7 @@ class PaymentController extends Controller
     // Standalone checkout page for a booking
     public function checkout(Booking $booking)
     {
-        abort_unless($booking->user_id === Auth::id(), 403);
+        abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         $paypalClientId = env('PAYPAL_CLIENT_ID');
         $currency = $booking->currency ?: 'KES';
         return view('checkout.booking', compact('booking', 'paypalClientId', 'currency'));
@@ -274,7 +274,7 @@ class PaymentController extends Controller
     // PayPal completion endpoint (after client-side capture). Optionally verifies via server if secret provided.
     public function paypalComplete(Request $request, Booking $booking)
     {
-        abort_unless($booking->user_id === Auth::id(), 403);
+        abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         $data = $request->validate([
             'order_id' => ['required', 'string'],
             'amount' => ['required', 'numeric', 'min:1'],
@@ -341,7 +341,7 @@ class PaymentController extends Controller
     // Invoice PDF
     public function invoice(Booking $booking)
     {
-        abort_unless($booking->user_id === Auth::id(), 403);
+        abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         $number = $booking->invoice_number ?: ('INV-'.str_pad($booking->id, 6, '0', STR_PAD_LEFT));
         if (!$booking->invoice_number) {
             $booking->update(['invoice_number' => $number]);
@@ -356,7 +356,7 @@ class PaymentController extends Controller
     // Receipt PDF (for latest/combined payments)
     public function receipt(Booking $booking)
     {
-        abort_unless($booking->user_id === Auth::id(), 403);
+        abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.receipt', [
             'booking' => $booking->fresh(['job','package','payments']),
         ]);

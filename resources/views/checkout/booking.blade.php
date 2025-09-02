@@ -14,6 +14,8 @@
       @if(session('error'))
         <div class="md:col-span-3 rounded bg-red-100 text-red-800 px-4 py-3">{{ session('error') }}</div>
       @endif
+      {{-- Dynamic M-PESA banner --}}
+      <div id="mpesa-banner" class="md:col-span-3 hidden rounded border px-4 py-3 text-sm" aria-live="polite"></div>
 
       <div class="md:col-span-2 bg-white shadow sm:rounded-lg p-6 space-y-6">
         <div>
@@ -57,15 +59,18 @@
               <input type="number" step="0.01" min="1" max="{{ max($booking->total_amount - $booking->amount_paid, 0) }}" name="amount" value="{{ number_format(max($booking->total_amount - $booking->amount_paid, 0), 2, '.', '') }}" class="mt-1 w-full rounded border p-2" />
             </div>
             <div>
-              <button class="w-full rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Send STK</button>
+              <button id="btn-stk" class="w-full rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Send STK</button>
             </div>
           </form>
           @if($booking->mpesa_checkout_id)
             <form action="{{ route('client.bookings.verify', $booking) }}" method="POST" class="mt-2">
               @csrf
-              <button class="text-sm text-gray-600 hover:underline">Verify latest M-PESA payment</button>
+              <button id="btn-verify" class="text-sm text-gray-600 hover:underline">Verify latest M-PESA payment</button>
             </form>
-            <div id="mpesa-status" class="mt-2 text-sm text-gray-700"></div>
+            <div id="mpesa-status" class="mt-2 text-sm text-gray-700 flex items-center">
+              <span id="mpesa-spinner" class="hidden inline-block w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+              <span id="mpesa-status-text"></span>
+            </div>
           @endif
         </div>
 
@@ -133,24 +138,56 @@
       if (!checkoutId) return;
 
       const statusEl = document.getElementById('mpesa-status');
+      const statusTextEl = document.getElementById('mpesa-status-text');
+      const spinnerEl = document.getElementById('mpesa-spinner');
+      const bannerEl = document.getElementById('mpesa-banner');
+      const btnStk = document.getElementById('btn-stk');
+      const btnVerify = document.getElementById('btn-verify');
       const routeTemplate = @json(route('payments.mpesa.status', ['ref' => '__REF__']));
       const statusUrl = routeTemplate.replace('__REF__', encodeURIComponent(checkoutId));
 
       let tries = 0;
-      const maxTries = 45; // ~3 minutes at 4s interval
+      const maxTries = 60; // ~4 minutes at 4s interval
       const intervalMs = 4000;
       let timer = null;
 
-      const setStatus = (text, tone = 'neutral') => {
+      const setStatus = (text, tone = 'neutral', spinning = false) => {
         if (!statusEl) return;
         statusEl.classList.remove('text-gray-700', 'text-emerald-700', 'text-red-700');
         statusEl.classList.add(tone === 'success' ? 'text-emerald-700' : tone === 'error' ? 'text-red-700' : 'text-gray-700');
-        statusEl.textContent = text;
+        if (statusTextEl) statusTextEl.textContent = text;
+        if (spinnerEl) spinnerEl.classList.toggle('hidden', !spinning);
+      };
+
+      const showBanner = (tone = 'info', text = '') => {
+        if (!bannerEl) return;
+        bannerEl.classList.remove('hidden', 'bg-emerald-100','text-emerald-800','border-emerald-200','bg-red-100','text-red-800','border-red-200','bg-amber-50','text-amber-800','border-amber-200','bg-blue-50','text-blue-800','border-blue-200');
+        if (tone === 'success') {
+          bannerEl.classList.add('bg-emerald-100','text-emerald-800','border','border-emerald-200');
+        } else if (tone === 'error') {
+          bannerEl.classList.add('bg-red-100','text-red-800','border','border-red-200');
+        } else {
+          bannerEl.classList.add('bg-blue-50','text-blue-800','border','border-blue-200');
+        }
+        bannerEl.textContent = text;
+      };
+
+      const setButtonsDisabled = (disabled) => {
+        const toggle = (btn) => {
+          if (!btn) return;
+          btn.disabled = disabled;
+          btn.classList.toggle('opacity-60', disabled);
+          btn.classList.toggle('cursor-not-allowed', disabled);
+        };
+        toggle(btnStk);
+        toggle(btnVerify);
       };
 
       const poll = async () => {
         tries++;
-        setStatus('Checking M-PESA status...');
+        setStatus('Checking M-PESA status...', 'neutral', true);
+        showBanner('info', 'Awaiting M-PESA confirmation. Please enter your PIN when prompted on your phone.');
+        setButtonsDisabled(true);
         try {
           const res = await fetch(statusUrl, { headers: { 'Accept': 'application/json' } });
           if (!res.ok) {
@@ -158,23 +195,30 @@
           }
           const data = await res.json();
           if (data.status === 'success') {
-            setStatus('Payment confirmed. Updating...', 'success');
+            setStatus('Payment confirmed. Updating...', 'success', false);
+            showBanner('success', 'Payment confirmed. Updating your booking...');
             clearInterval(timer);
             setTimeout(() => window.location.reload(), 800);
           } else if (data.status === 'failed') {
-            setStatus('Payment failed: ' + (data.message || 'Declined'), 'error');
+            setStatus('Payment failed: ' + (data.message || 'Declined'), 'error', false);
+            showBanner('error', 'Payment failed: ' + (data.message || 'Declined'));
             clearInterval(timer);
+            setButtonsDisabled(false);
           } else {
-            setStatus('Awaiting confirmation... (keep your phone nearby)');
+            setStatus('Awaiting confirmation... (keep your phone nearby)', 'neutral', true);
             if (tries >= maxTries) {
               clearInterval(timer);
-              setStatus('Still pending. You can verify again or retry STK.');
+              setStatus('Still pending. You can verify again or retry STK.', 'neutral', false);
+              showBanner('info', 'Still pending. You can click Verify again or send a new STK request.');
+              setButtonsDisabled(false);
             }
           }
         } catch (e) {
           if (tries >= maxTries) {
             clearInterval(timer);
-            setStatus('Could not verify at the moment. Try again later.', 'error');
+            setStatus('Could not verify at the moment. Try again later.', 'error', false);
+            showBanner('error', 'We could not reach M-PESA to verify. Please try again.');
+            setButtonsDisabled(false);
           }
         }
       };
