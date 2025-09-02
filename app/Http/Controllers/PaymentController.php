@@ -81,6 +81,10 @@ class PaymentController extends Controller
                         if ($statusText === 'full') {
                             $booking->status = 'paid';
                             $booking->paid_at = $booking->paid_at ?: now();
+                        } else {
+                            if ($booking->status !== 'paid') {
+                                $booking->status = 'processing';
+                            }
                         }
                         $booking->payment_status = $statusText;
                         $booking->save();
@@ -202,12 +206,19 @@ class PaymentController extends Controller
                     $statusText = 'full';
                 }
 
-                $booking->update([
-                    'status' => $statusText === 'full' ? 'paid' : $booking->status,
+                $updates = [
                     'paid_at' => $statusText === 'full' ? now() : $booking->paid_at,
                     'amount_paid' => $newAmountPaid,
                     'payment_status' => $statusText,
-                ]);
+                ];
+                if ($statusText === 'full') {
+                    $updates['status'] = 'paid';
+                } else {
+                    if ($booking->status !== 'paid') {
+                        $updates['status'] = 'processing';
+                    }
+                }
+                $booking->update($updates);
 
                 // Update payment record
                 $payment = $booking->payments()->where('reference', $booking->mpesa_checkout_id)->latest()->first();
@@ -253,13 +264,20 @@ class PaymentController extends Controller
                             $statusText = 'full';
                         }
 
-                        $booking->update([
-                            'status' => $statusText === 'full' ? 'paid' : $booking->status,
+                        $updates = [
                             'paid_at' => $statusText === 'full' ? now() : $booking->paid_at,
                             'mpesa_receipt' => $receipt,
                             'amount_paid' => $newAmountPaid,
                             'payment_status' => $statusText,
-                        ]);
+                        ];
+                        if ($statusText === 'full') {
+                            $updates['status'] = 'paid';
+                        } else {
+                            if ($booking->status !== 'paid') {
+                                $updates['status'] = 'processing';
+                            }
+                        }
+                        $booking->update($updates);
 
                         // Update payment record
                         $payment = $booking->payments()->where('reference', $checkoutId)->latest()->first();

@@ -38,6 +38,7 @@
                 <td class="px-6 py-4 text-sm">
                   @php($badge = match($b->status){
                     'pending' => 'bg-amber-100 text-amber-800',
+                    'processing' => 'bg-blue-100 text-blue-800',
                     'paid' => 'bg-emerald-100 text-emerald-800',
                     'cancelled' => 'bg-gray-100 text-gray-800',
                     default => 'bg-slate-100 text-slate-800',
@@ -46,7 +47,7 @@
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">{{ $b->created_at->format('Y-m-d H:i') }}</td>
                 <td class="px-6 py-4 text-sm text-right">
-                  @if($b->status === 'pending')
+                  @if($b->status !== 'paid')
                     <a href="{{ route('client.bookings.checkout', $b) }}" class="inline-block mr-2 rounded border border-emerald-600 px-3 py-1.5 text-emerald-700 text-sm hover:bg-emerald-50">Checkout</a>
                     <form action="{{ route('client.bookings.pay', $b) }}" method="POST" class="flex items-center gap-2">
                       @csrf
