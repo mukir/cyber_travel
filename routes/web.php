@@ -47,6 +47,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/client/bookings/{booking}/invoice', [PaymentController::class, 'invoice'])->name('client.bookings.invoice');
     Route::get('/client/bookings/{booking}/receipt', [PaymentController::class, 'receipt'])->name('client.bookings.receipt');
 
+    // Polling endpoint for M-Pesa STK status by CheckoutRequestID (reference)
+    Route::get('/payments/mpesa/status/{ref}', [PaymentController::class, 'mpesaStatus'])->name('payments.mpesa.status');
+
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 

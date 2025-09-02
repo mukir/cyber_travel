@@ -7,11 +7,104 @@ use App\Models\Booking;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
+    // Polling endpoint to verify an M-Pesa STK payment by CheckoutRequestID (reference)
+    public function mpesaStatus(string $ref)
+    {
+        $payment = Payment::where('reference', $ref)
+            ->whereHas('booking', function ($q) {
+                $q->where('user_id', Auth::id());
+            })
+            ->latest('id')
+            ->first();
+
+        if (!$payment) {
+            return response()->json(['status' => 'failed', 'message' => 'Reference not found'], 404);
+        }
+
+        // If already terminal
+        if ($payment->status === 'paid' && (float)$payment->amount > 0) {
+            return response()->json(['status' => 'success', 'message' => 'Payment confirmed.']);
+        }
+        if ($payment->status === 'failed') {
+            $msg = data_get($payment->provider_payload, 'stk_query.ResultDesc')
+                ?? data_get($payment->provider_payload, 'ResultDesc')
+                ?? 'Failed.';
+            return response()->json(['status' => 'failed', 'message' => $msg]);
+        }
+
+        // Validate via STK Query (CheckoutRequestID is our reference)
+        $checkoutId = $ref;
+        if ($checkoutId) {
+            $q = SafaricomDarajaHelper::validateStkTransaction($checkoutId);
+
+            if (($q['status'] ?? '') === 'success' && isset($q['resultCode'])) {
+                $resultCode = (int) $q['resultCode'];
+
+                if ($resultCode === 0) {
+                    // Success – idempotently mark payment as paid and update booking totals
+                    DB::transaction(function () use ($payment, $q) {
+                        // Reload with lock for safety
+                        $pay = Payment::whereKey($payment->id)->lockForUpdate()->first();
+                        $booking = \App\Models\Booking::whereKey($pay->booking_id)->lockForUpdate()->first();
+
+                        // Merge provider payload to keep both callback and query
+                        $payload = is_array($pay->provider_payload) ? $pay->provider_payload : [];
+                        $payload['stk_query'] = $q['data'] ?? $q;
+
+                        if ($pay->status !== 'paid') {
+                            $pay->status = 'paid';
+                        }
+                        $pay->provider_payload = $payload;
+                        $pay->save();
+
+                        // Update booking amounts idempotently: only add if this payment wasn't counted yet
+                        // Heuristic: if no existing paid marker for this payment in amount_paid, add
+                        // Safer approach: recompute from sum of paid payments
+                        $sumPaid = (float) $booking->payments()->where('status', 'paid')->sum('amount');
+
+                        $statusText = 'installments';
+                        if ($booking->payments()->where('status', 'paid')->count() === 1 && $sumPaid < (float)$booking->total_amount) {
+                            // First successful payment and not full amount
+                            $statusText = 'deposit';
+                        }
+                        if ($sumPaid >= (float)$booking->total_amount) {
+                            $statusText = 'full';
+                        }
+
+                        $booking->amount_paid = $sumPaid;
+                        if ($statusText === 'full') {
+                            $booking->status = 'paid';
+                            $booking->paid_at = $booking->paid_at ?: now();
+                        }
+                        $booking->payment_status = $statusText;
+                        $booking->save();
+                    });
+
+                    return response()->json(['status' => 'success', 'message' => 'Processed successfully (via query)']);
+                }
+
+                // Common failure codes
+                $failedCodes = [1032, 2001, 1037, 1001, 1002, 1];
+                if (in_array($resultCode, $failedCodes, true)) {
+                    $payload = is_array($payment->provider_payload) ? $payment->provider_payload : [];
+                    $payload['stk_query'] = $q['data'] ?? $q;
+                    $payment->status = 'failed';
+                    $payment->provider_payload = $payload;
+                    $payment->save();
+
+                    return response()->json(['status' => 'failed', 'message' => $q['message'] ?? 'Declined']);
+                }
+            }
+        }
+
+        return response()->json(['status' => 'pending']);
+    }
     public function payBooking(Request $request, Booking $booking)
     {
         abort_unless($booking->user_id === Auth::id(), 403);

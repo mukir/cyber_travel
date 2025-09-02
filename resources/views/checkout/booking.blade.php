@@ -65,6 +65,7 @@
               @csrf
               <button class="text-sm text-gray-600 hover:underline">Verify latest M-PESA payment</button>
             </form>
+            <div id="mpesa-status" class="mt-2 text-sm text-gray-700"></div>
           @endif
         </div>
 
@@ -125,5 +126,62 @@
       });
     </script>
   @endif
-</x-app-layout>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const checkoutId = @json($booking->mpesa_checkout_id);
+      if (!checkoutId) return;
+
+      const statusEl = document.getElementById('mpesa-status');
+      const routeTemplate = @json(route('payments.mpesa.status', ['ref' => '__REF__']));
+      const statusUrl = routeTemplate.replace('__REF__', encodeURIComponent(checkoutId));
+
+      let tries = 0;
+      const maxTries = 45; // ~3 minutes at 4s interval
+      const intervalMs = 4000;
+      let timer = null;
+
+      const setStatus = (text, tone = 'neutral') => {
+        if (!statusEl) return;
+        statusEl.classList.remove('text-gray-700', 'text-emerald-700', 'text-red-700');
+        statusEl.classList.add(tone === 'success' ? 'text-emerald-700' : tone === 'error' ? 'text-red-700' : 'text-gray-700');
+        statusEl.textContent = text;
+      };
+
+      const poll = async () => {
+        tries++;
+        setStatus('Checking M-PESA status...');
+        try {
+          const res = await fetch(statusUrl, { headers: { 'Accept': 'application/json' } });
+          if (!res.ok) {
+            throw new Error('Network error');
+          }
+          const data = await res.json();
+          if (data.status === 'success') {
+            setStatus('Payment confirmed. Updating...', 'success');
+            clearInterval(timer);
+            setTimeout(() => window.location.reload(), 800);
+          } else if (data.status === 'failed') {
+            setStatus('Payment failed: ' + (data.message || 'Declined'), 'error');
+            clearInterval(timer);
+          } else {
+            setStatus('Awaiting confirmation... (keep your phone nearby)');
+            if (tries >= maxTries) {
+              clearInterval(timer);
+              setStatus('Still pending. You can verify again or retry STK.');
+            }
+          }
+        } catch (e) {
+          if (tries >= maxTries) {
+            clearInterval(timer);
+            setStatus('Could not verify at the moment. Try again later.', 'error');
+          }
+        }
+      };
+
+      // kick off immediately, then interval
+      poll();
+      timer = setInterval(poll, intervalMs);
+    });
+  </script>
+</x-app-layout>
