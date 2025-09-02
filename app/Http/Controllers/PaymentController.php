@@ -109,6 +109,9 @@ class PaymentController extends Controller
     {
         abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         if ($booking->status === 'paid') {
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'success', 'message' => 'This booking is already paid.']);
+            }
             return back()->with('success', 'This booking is already paid.');
         }
 
@@ -152,7 +155,25 @@ class PaymentController extends Controller
                 'provider_payload' => $data,
             ]);
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'STK push sent. Enter PIN on your phone to complete payment.',
+                    'checkoutId' => $data['CheckoutRequestID'] ?? null,
+                    'merchantRequestId' => $data['MerchantRequestID'] ?? null,
+                    'amount' => $amount,
+                ]);
+            }
+
             return back()->with('success', 'STK push sent. Enter PIN on your phone to complete payment.');
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $resp['message'] ?? 'Failed to initiate payment.',
+                'data' => $resp['data'] ?? null,
+            ]);
         }
 
         return back()->with('error', $resp['message'] ?? 'Failed to initiate payment.');

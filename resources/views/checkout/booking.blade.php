@@ -48,7 +48,7 @@
 
         <div>
           <h3 class="text-lg font-semibold">Pay with M-PESA</h3>
-          <form action="{{ route('client.bookings.pay', $booking) }}" method="POST" class="mt-3 grid sm:grid-cols-3 gap-3 items-end">
+          <form id="form-stk" action="{{ route('client.bookings.pay', $booking) }}" method="POST" class="mt-3 grid sm:grid-cols-3 gap-3 items-end">
             @csrf
             <div>
               <label class="block text-sm text-gray-700">Phone (07XXXXXXXX)</label>
@@ -67,11 +67,11 @@
               @csrf
               <button id="btn-verify" class="text-sm text-gray-600 hover:underline">Verify latest M-PESA payment</button>
             </form>
-            <div id="mpesa-status" class="mt-2 text-sm text-gray-700 flex items-center">
-              <span id="mpesa-spinner" class="hidden inline-block w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-              <span id="mpesa-status-text"></span>
-            </div>
           @endif
+          <div id="mpesa-status" class="mt-2 text-sm text-gray-700 flex items-center">
+            <span id="mpesa-spinner" class="hidden inline-block w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+            <span id="mpesa-status-text"></span>
+          </div>
         </div>
 
         <div>
@@ -134,9 +134,8 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const checkoutId = @json($booking->mpesa_checkout_id);
-      if (!checkoutId) return;
-
+      let checkoutId = @json($booking->mpesa_checkout_id);
+      const formStk = document.getElementById('form-stk');
       const statusEl = document.getElementById('mpesa-status');
       const statusTextEl = document.getElementById('mpesa-status-text');
       const spinnerEl = document.getElementById('mpesa-spinner');
@@ -144,7 +143,7 @@
       const btnStk = document.getElementById('btn-stk');
       const btnVerify = document.getElementById('btn-verify');
       const routeTemplate = @json(route('payments.mpesa.status', ['ref' => '__REF__']));
-      const statusUrl = routeTemplate.replace('__REF__', encodeURIComponent(checkoutId));
+      let statusUrl = checkoutId ? routeTemplate.replace('__REF__', encodeURIComponent(checkoutId)) : null;
 
       let tries = 0;
       const maxTries = 60; // ~4 minutes at 4s interval
@@ -184,6 +183,10 @@
       };
 
       const poll = async () => {
+        if (!checkoutId || !statusUrl) {
+          showBanner('info', 'No M-PESA request yet. Send STK first.');
+          return;
+        }
         tries++;
         setStatus('Checking M-PESA status...', 'neutral', true);
         showBanner('info', 'Awaiting M-PESA confirmation. Please enter your PIN when prompted on your phone.');
@@ -223,9 +226,67 @@
         }
       };
 
-      // kick off immediately, then interval
-      poll();
-      timer = setInterval(poll, intervalMs);
+      // kick off immediately, then interval if there is a pending request
+      if (checkoutId) {
+        poll();
+        timer = setInterval(poll, intervalMs);
+      }
+
+      // Intercept STK form submit to initiate via fetch JSON
+      if (formStk) {
+        formStk.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+          const phone = formStk.querySelector('input[name="phone"]').value;
+          const amount = formStk.querySelector('input[name="amount"]').value;
+
+          setButtonsDisabled(true);
+          setStatus('Sending STK push...', 'neutral', true);
+          showBanner('info', 'Sending STK push. Check your phone for the prompt.');
+
+          try {
+            const res = await fetch(formStk.action, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token,
+              },
+              body: JSON.stringify({ phone, amount })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (data && data.status === 'success') {
+              const newCheckout = data.checkoutId || (data.data && data.data.CheckoutRequestID);
+              if (newCheckout) {
+                checkoutId = newCheckout;
+                statusUrl = routeTemplate.replace('__REF__', encodeURIComponent(checkoutId));
+                tries = 0;
+                if (timer) clearInterval(timer);
+                poll();
+                timer = setInterval(poll, intervalMs);
+              }
+            } else {
+              const msg = (data && data.message) ? data.message : 'Failed to initiate payment.';
+              showBanner('error', msg);
+              setStatus('Payment initiation failed.', 'error', false);
+              setButtonsDisabled(false);
+            }
+          } catch (err) {
+            showBanner('error', 'Network error while initiating payment.');
+            setStatus('Network error while initiating payment.', 'error', false);
+            setButtonsDisabled(false);
+          }
+        });
+      }
+
+      // Intercept manual Verify button to trigger one-off poll
+      if (btnVerify) {
+        btnVerify.addEventListener('click', function (e) {
+          e.preventDefault();
+          tries = 0;
+          poll();
+        });
+      }
     });
   </script>
 </x-app-layout>
