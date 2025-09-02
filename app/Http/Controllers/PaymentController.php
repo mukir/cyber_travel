@@ -48,7 +48,7 @@ class PaymentController extends Controller
 
                 if ($resultCode === 0) {
                     // Success – idempotently mark payment as paid and update booking totals
-                    DB::transaction(function () use ($payment, $q) {
+                    $state = DB::transaction(function () use ($payment, $q) {
                         // Reload with lock for safety
                         $pay = Payment::whereKey($payment->id)->lockForUpdate()->first();
                         $booking = \App\Models\Booking::whereKey($pay->booking_id)->lockForUpdate()->first();
@@ -83,14 +83,28 @@ class PaymentController extends Controller
                             $booking->paid_at = $booking->paid_at ?: now();
                         } else {
                             if ($booking->status !== 'paid') {
-                                $booking->status = 'processing';
+                                $booking->status = 'partially_paid';
                             }
                         }
                         $booking->payment_status = $statusText;
                         $booking->save();
+
+                        return [
+                            'booking_status' => $booking->status,
+                            'payment_status' => $statusText,
+                            'amount_paid' => $sumPaid,
+                            'total_amount' => (float) $booking->total_amount,
+                        ];
                     });
 
-                    return response()->json(['status' => 'success', 'message' => 'Processed successfully (via query)']);
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Processed successfully (via query)',
+                        'booking_status' => $state['booking_status'] ?? null,
+                        'payment_status' => $state['payment_status'] ?? null,
+                        'amount_paid' => $state['amount_paid'] ?? null,
+                        'total_amount' => $state['total_amount'] ?? null,
+                    ]);
                 }
 
                 // Common failure codes
@@ -102,12 +116,27 @@ class PaymentController extends Controller
                     $payment->provider_payload = $payload;
                     $payment->save();
 
-                    return response()->json(['status' => 'failed', 'message' => $q['message'] ?? 'Declined']);
+                    $booking = $payment->booking()->first();
+                    return response()->json([
+                        'status' => 'failed',
+                        'message' => $q['message'] ?? 'Declined',
+                        'booking_status' => optional($booking)->status,
+                        'payment_status' => optional($booking)->payment_status,
+                        'amount_paid' => optional($booking)->amount_paid,
+                        'total_amount' => optional($booking)->total_amount,
+                    ]);
                 }
             }
         }
 
-        return response()->json(['status' => 'pending']);
+        $booking = $payment->booking()->first();
+        return response()->json([
+            'status' => 'pending',
+            'booking_status' => optional($booking)->status,
+            'payment_status' => optional($booking)->payment_status,
+            'amount_paid' => optional($booking)->amount_paid,
+            'total_amount' => optional($booking)->total_amount,
+        ]);
     }
     public function payBooking(Request $request, Booking $booking)
     {
@@ -215,7 +244,7 @@ class PaymentController extends Controller
                     $updates['status'] = 'paid';
                 } else {
                     if ($booking->status !== 'paid') {
-                        $updates['status'] = 'processing';
+                        $updates['status'] = 'partially_paid';
                     }
                 }
                 $booking->update($updates);
@@ -274,7 +303,7 @@ class PaymentController extends Controller
                             $updates['status'] = 'paid';
                         } else {
                             if ($booking->status !== 'paid') {
-                                $updates['status'] = 'processing';
+                                $updates['status'] = 'partially_paid';
                             }
                         }
                         $booking->update($updates);

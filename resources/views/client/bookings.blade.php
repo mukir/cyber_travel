@@ -38,7 +38,7 @@
                 <td class="px-6 py-4 text-sm">
                   @php($badge = match($b->status){
                     'pending' => 'bg-amber-100 text-amber-800',
-                    'processing' => 'bg-blue-100 text-blue-800',
+                    'partially_paid' => 'bg-blue-100 text-blue-800',
                     'paid' => 'bg-emerald-100 text-emerald-800',
                     'cancelled' => 'bg-gray-100 text-gray-800',
                     default => 'bg-slate-100 text-slate-800',
@@ -49,18 +49,6 @@
                 <td class="px-6 py-4 text-sm text-right">
                   @if($b->status !== 'paid')
                     <a href="{{ route('client.bookings.checkout', $b) }}" class="inline-block mr-2 rounded border border-emerald-600 px-3 py-1.5 text-emerald-700 text-sm hover:bg-emerald-50">Checkout</a>
-                    <form action="{{ route('client.bookings.pay', $b) }}" method="POST" class="flex items-center gap-2">
-                      @csrf
-                      <input type="tel" name="phone" value="{{ old('phone', $b->customer_phone) }}" placeholder="07XXXXXXXX" class="w-36 rounded border p-1 text-sm" required />
-                      <input type="number" step="0.01" min="1" max="{{ max($b->total_amount - $b->amount_paid, 0) }}" name="amount" value="{{ number_format(max($b->total_amount - $b->amount_paid, 0), 2, '.', '') }}" class="w-28 rounded border p-1 text-sm" />
-                      <button class="rounded bg-emerald-600 px-3 py-1.5 text-white text-sm hover:bg-emerald-700">M-PESA</button>
-                    </form>
-                    @if($b->mpesa_checkout_id)
-                      <form action="{{ route('client.bookings.verify', $b) }}" method="POST" class="mt-1">
-                        @csrf
-                        <button class="text-xs text-gray-600 hover:underline">Verify payment</button>
-                      </form>
-                    @endif
                   @else
                     <span class="text-xs text-gray-500">—</span>
                   @endif
