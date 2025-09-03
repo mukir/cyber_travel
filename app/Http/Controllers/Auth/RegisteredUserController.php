@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Enums\UserRole;
+use App\Mail\VerifyEmailMail;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -45,8 +47,12 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
+        // Send verification email using Mail class
+        Mail::to($user->email)->send(new VerifyEmailMail($user));
 
-        return redirect(route('dashboard', absolute: false));
+        \Log::info('Verification email sent to: ' . $user->email);
+
+        // Don't auto-login, redirect to email verification notice
+        return redirect()->route('verification.notice')->with('status', 'Registration successful! Please check your email to verify your account.');
     }
 }

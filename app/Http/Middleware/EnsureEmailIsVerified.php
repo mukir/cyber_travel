@@ -19,7 +19,18 @@ class EnsureEmailIsVerified
         if (! $request->user() ||
             ($request->user() instanceof MustVerifyEmail &&
             ! $request->user()->hasVerifiedEmail())) {
-            return response()->json(['message' => 'Your email address is not verified.'], 409);
+            
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Your email address is not verified.'], 409);
+            }
+
+            // Store intended URL for redirect after verification
+            session(['url.intended' => $request->url()]);
+            
+            // Add verification notice to session
+            session()->flash('verification_notice', true);
+            
+            return redirect()->route('verification.notice');
         }
 
         return $next($request);
