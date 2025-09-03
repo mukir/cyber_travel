@@ -95,7 +95,26 @@ class ClientController extends Controller
     {
         $profile = ClientProfile::firstOrNew(['user_id' => Auth::id()]);
 
-        return view('client.biodata', compact('profile'));
+        // Compute completeness (profile fields + required documents)
+        $importantFields = ['name','dob','phone','email','gender','id_no','county','next_of_kin','service_package'];
+        $fieldsTotal = count($importantFields);
+        $fieldsFilled = collect($importantFields)->filter(function ($key) use ($profile) {
+            $v = $profile->$key ?? null;
+            return !is_null($v) && trim((string)$v) !== '';
+        })->count();
+
+        $requiredDocs = collect(['passport', 'good_conduct', 'cv', 'photo']);
+        $uploaded = ClientDocument::where('user_id', Auth::id())->pluck('type')->map(function ($t) {
+            return strtolower((string)$t);
+        });
+        $docsTotal = $requiredDocs->count();
+        $docsUploaded = $requiredDocs->filter(fn($d) => $uploaded->contains($d))->count();
+        $missingDocs = $requiredDocs->reject(fn($d) => $uploaded->contains($d))->values();
+
+        // 50/50 weighting between profile fields and documents
+        $completeness = (int) round((($fieldsTotal ? $fieldsFilled / $fieldsTotal : 1) + ($docsTotal ? $docsUploaded / $docsTotal : 1)) * 50);
+
+        return view('client.biodata', compact('profile', 'fieldsFilled', 'fieldsTotal', 'docsUploaded', 'docsTotal', 'missingDocs', 'completeness'));
     }
 
     public function storeBiodata(Request $request)
