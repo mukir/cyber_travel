@@ -26,7 +26,14 @@ Route::get('/jobs/{job:slug}', [JobController::class, 'show'])->name('jobs.show'
 Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $user = auth()->user();
+    if ($user && method_exists($user, 'is_admin') && $user->is_admin()) {
+        return redirect()->route('admin.dashboard');
+    }
+    if ($user && method_exists($user, 'is_staff') && $user->is_staff()) {
+        return redirect()->route('staff.dashboard');
+    }
+    return redirect()->route('client.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
