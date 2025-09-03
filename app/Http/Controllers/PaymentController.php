@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Helpers\Settings;
 
 class PaymentController extends Controller
 {
@@ -343,7 +344,7 @@ class PaymentController extends Controller
     public function checkout(Booking $booking)
     {
         abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
-        $paypalClientId = env('PAYPAL_CLIENT_ID');
+        $paypalClientId = Settings::get('paypal.client_id', env('PAYPAL_CLIENT_ID'));
         $currency = $booking->currency ?: 'KES';
         return view('checkout.booking', compact('booking', 'paypalClientId', 'currency'));
     }
@@ -362,11 +363,12 @@ class PaymentController extends Controller
         $amount = (float)$data['amount'];
 
         // Optional server verification if secret present
-        $secret = env('PAYPAL_CLIENT_SECRET');
-        $base = env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com');
+        $secret = Settings::get('paypal.client_secret', env('PAYPAL_CLIENT_SECRET'));
+        $base = Settings::get('paypal.base_url', env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com'));
         if ($secret) {
             try {
-                $tokenResp = \Illuminate\Support\Facades\Http::asForm()->withBasicAuth(env('PAYPAL_CLIENT_ID'), $secret)
+                $clientId = Settings::get('paypal.client_id', env('PAYPAL_CLIENT_ID'));
+                $tokenResp = \Illuminate\Support\Facades\Http::asForm()->withBasicAuth($clientId, $secret)
                     ->post($base.'/v1/oauth2/token', ['grant_type' => 'client_credentials'])
                     ->json();
                 $access = $tokenResp['access_token'] ?? null;

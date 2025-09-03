@@ -107,6 +107,25 @@
             </div>
           </div>
 
+          <h3 class="text-lg font-semibold mt-6">PayPal</h3>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm text-gray-700">Client ID</label>
+              <input type="text" name="paypal.client_id" value="{{ old('paypal.client_id', $paypal['client_id']) }}" class="mt-1 w-full rounded border p-2" />
+              @error('paypal.client_id')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm text-gray-700">Client Secret</label>
+              <input type="text" name="paypal.client_secret" value="{{ old('paypal.client_secret', $paypal['client_secret']) }}" class="mt-1 w-full rounded border p-2" />
+              @error('paypal.client_secret')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm text-gray-700">Base API URL</label>
+              <input type="url" name="paypal.base_url" value="{{ old('paypal.base_url', $paypal['base_url']) }}" class="mt-1 w-full rounded border p-2" placeholder="https://api-m.sandbox.paypal.com" />
+              @error('paypal.base_url')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
+            </div>
+          </div>
+
           <div class="mt-4">
             <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Save Settings</button>
           </div>
