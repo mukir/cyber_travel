@@ -8,6 +8,22 @@
 
   <div class="py-8">
     <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+      <div class="mb-6 bg-white shadow sm:rounded-lg p-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Profile Completeness</h3>
+          <span class="text-sm text-gray-600">{{ $completeness ?? 0 }}%</span>
+        </div>
+        <div class="mt-2 h-2 w-full rounded bg-gray-200 overflow-hidden" role="progressbar" aria-valuenow="{{ $completeness ?? 0 }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="h-full bg-emerald-600" style="width: {{ (int)($completeness ?? 0) }}%"></div>
+        </div>
+        <p class="mt-2 text-xs text-gray-600">Fields: {{ $fieldsFilled ?? 0 }}/{{ $fieldsTotal ?? 0 }} • Documents: {{ $docsUploaded ?? 0 }}/{{ $docsTotal ?? 0 }}</p>
+        @if(isset($missingDocs) && $missingDocs->count())
+          <div class="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Missing documents: {{ $missingDocs->implode(', ') }}. <a class="underline" href="{{ route('client.documents') }}">Upload now</a>.
+          </div>
+        @endif
+      </div>
+
       @if ($errors->any())
         <div class="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
           Please fix the errors below and try again.
