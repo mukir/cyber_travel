@@ -29,7 +29,7 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -84,10 +84,10 @@ Route::middleware('auth')->group(function () {
             }
             return app(\App\Http\Controllers\AdminReportController::class)->bookingsPdf($period);
         })->where(['period' => 'daily|weekly|monthly', 'format' => 'csv|pdf'])->name('reports.bookings');
-        Route::get('/reports/bookings/{period}/csv', [\App\Http\Controllers\AdminReportController::class, 'bookingsCsv'])->name('reports.bookings.csv');
-        Route::get('/reports/bookings/{period}/pdf', [\App\Http\Controllers\AdminReportController::class, 'bookingsPdf'])->name('reports.bookings.pdf');
-        Route::get('/reports/commissions/{period}/csv', [\App\Http\Controllers\AdminReportController::class, 'commissionsCsv'])->name('reports.commissions.csv');
-        Route::get('/reports/commissions/{period}/pdf', [\App\Http\Controllers\AdminReportController::class, 'commissionsPdf'])->name('reports.commissions.pdf');
+        Route::get('/reports/bookings/{period}/csv', [AdminController::class, 'reports'])->name('reports.bookings.csv');
+        Route::get('/reports/bookings/{period}/pdf', [AdminController::class, 'reports'])->name('reports.bookings.pdf');
+        Route::get('/reports/commissions/{period}/csv', [AdminController::class, 'reports'])->name('reports.commissions.csv');
+        Route::get('/reports/commissions/{period}/pdf', [AdminController::class, 'reports'])->name('reports.commissions.pdf');
         Route::post('/reports/email', [\App\Http\Controllers\AdminReportController::class, 'emailReport'])->name('reports.email');
         Route::get('/communications', [AdminController::class, 'communications'])->name('communications');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
