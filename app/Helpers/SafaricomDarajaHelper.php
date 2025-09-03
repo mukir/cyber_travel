@@ -5,6 +5,7 @@ namespace App\Helpers;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use App\Helpers\Settings;
 
 class SafaricomDarajaHelper
 {
@@ -32,15 +33,16 @@ class SafaricomDarajaHelper
 
     public static function getAccessToken()
     {
-        $consumerKey = env('SAFARICOM_DARAJA_CONSUMER_KEY');
-        $consumerSecret = env('SAFARICOM_DARAJA_CONSUMER_SECRET');
+        $consumerKey = Settings::get('safaricom.consumer_key', env('SAFARICOM_DARAJA_CONSUMER_KEY'));
+        $consumerSecret = Settings::get('safaricom.consumer_secret', env('SAFARICOM_DARAJA_CONSUMER_SECRET'));
 
         if (!$consumerKey || !$consumerSecret) {
             Log::error('Daraja API: Consumer key or secret is missing.');
             return null;
         }
 
-        $url = env('SAFARICOM_DARAJA_BASE_URL') . '/oauth/v1/generate?grant_type=client_credentials';
+        $base = rtrim((string)Settings::get('safaricom.base_url', env('SAFARICOM_DARAJA_BASE_URL')), '/');
+        $url = $base . '/oauth/v1/generate?grant_type=client_credentials';
 
         try {
             $response = Http::withBasicAuth($consumerKey, $consumerSecret)
@@ -79,7 +81,8 @@ class SafaricomDarajaHelper
             ];
         }
 
-        $url = env('SAFARICOM_DARAJA_BASE_URL') . '/mpesa/b2c/v1/paymentrequest';
+        $base = rtrim((string)Settings::get('safaricom.base_url', env('SAFARICOM_DARAJA_BASE_URL')), '/');
+        $url = $base . '/mpesa/b2c/v1/paymentrequest';
 
         $headers = [
             'Authorization' => 'Bearer ' . $accessToken,
@@ -89,15 +92,15 @@ class SafaricomDarajaHelper
         $timestamp = date('YmdHis');
 
         // Format B2C URLs to ensure they include a protocol
-        $queueTimeOutURL = self::formatUrl(env('SAFARICOM_B2C_TIMEOUT_URL'));
-        $resultURL       = self::formatUrl(env('SAFARICOM_B2C_RESULT_URL'));
+        $queueTimeOutURL = self::formatUrl((string)Settings::get('safaricom.b2c_timeout_url', env('SAFARICOM_B2C_TIMEOUT_URL')));
+        $resultURL       = self::formatUrl((string)Settings::get('safaricom.b2c_result_url', env('SAFARICOM_B2C_RESULT_URL')));
 
         $payload = [
-            'InitiatorName'      => env('SAFARICOM_INITIATOR_NAME'),
-            'SecurityCredential' => env('SecurityCredential'),
+            'InitiatorName'      => Settings::get('safaricom.initiator_name', env('SAFARICOM_INITIATOR_NAME')),
+            'SecurityCredential' => Settings::get('safaricom.security_credential', env('SecurityCredential')),
             'CommandID'          => 'BusinessPayment',
             'Amount'             => $amount,
-            'PartyA'             => env('SAFARICOM_SHORTCODE'),
+            'PartyA'             => Settings::get('safaricom.shortcode', env('SAFARICOM_SHORTCODE')),
             'PartyB'             => $phoneNumber,
             'Remarks'            => $reference,
             'QueueTimeOutURL'    => $queueTimeOutURL,
@@ -154,7 +157,8 @@ class SafaricomDarajaHelper
             ];
         }
 
-        $url = env('SAFARICOM_DARAJA_BASE_URL') . '/mpesa/stkpush/v1/processrequest';
+        $base = rtrim((string)Settings::get('safaricom.base_url', env('SAFARICOM_DARAJA_BASE_URL')), '/');
+        $url = $base . '/mpesa/stkpush/v1/processrequest';
 
         $headers = [
             'Authorization' => 'Bearer ' . $accessToken,
@@ -162,19 +166,21 @@ class SafaricomDarajaHelper
         ];
 
         $timestamp = date('YmdHis');
-        $password = base64_encode(env('SAFARICOM_SHORTCODE') . env('SAFARICOM_PASSKEY') . $timestamp);
+        $short = (string)Settings::get('safaricom.shortcode', env('SAFARICOM_SHORTCODE'));
+        $pass  = (string)Settings::get('safaricom.passkey', env('SAFARICOM_PASSKEY'));
+        $password = base64_encode($short . $pass . $timestamp);
 
         // Format the callback URL to ensure proper protocol
-        $callbackUrl = self::formatUrl(env('SAFARICOM_STK_CALLBACK_URL'));
+        $callbackUrl = self::formatUrl((string)Settings::get('safaricom.stk_callback_url', env('SAFARICOM_STK_CALLBACK_URL', url('/payments/mpesa/stk/callback'))));
 
         $payload = [
-            'BusinessShortCode' => env('SAFARICOM_SHORTCODE'),
+            'BusinessShortCode' => $short,
             'Password'          => $password,
             'Timestamp'         => $timestamp,
             'TransactionType'   => 'CustomerPayBillOnline',
             'Amount'            => $amount,
             'PartyA'            => $phoneNumber,
-            'PartyB'            => env('SAFARICOM_SHORTCODE'),
+            'PartyB'            => $short,
             'PhoneNumber'       => $phoneNumber,
             'CallBackURL'       => $callbackUrl,
             'AccountReference'  => $reference,
@@ -226,7 +232,8 @@ class SafaricomDarajaHelper
             ];
         }
 
-        $url = env('SAFARICOM_DARAJA_BASE_URL') . '/mpesa/accountbalance/v1/query';
+        $base = rtrim((string)Settings::get('safaricom.base_url', env('SAFARICOM_DARAJA_BASE_URL')), '/');
+        $url = $base . '/mpesa/accountbalance/v1/query';
 
         $headers = [
             'Authorization' => 'Bearer ' . $accessToken,
@@ -235,16 +242,18 @@ class SafaricomDarajaHelper
 
         $timestamp = date('YmdHis');
         // Compute the security credential (password) similar to the STK push process
-        $password = base64_encode(env('SAFARICOM_SHORTCODE') . env('SAFARICOM_PASSKEY') . $timestamp);
+        $short = (string)Settings::get('safaricom.shortcode', env('SAFARICOM_SHORTCODE'));
+        $pass  = (string)Settings::get('safaricom.passkey', env('SAFARICOM_PASSKEY'));
+        $password = base64_encode($short . $pass . $timestamp);
 
-        $queueTimeOutURL = self::formatUrl(env('SAFARICOM_BALANCE_TIMEOUT_URL'));
-        $resultURL       = self::formatUrl(env('SAFARICOM_BALANCE_RESULT_URL'));
+        $queueTimeOutURL = self::formatUrl((string)Settings::get('safaricom.balance_timeout_url', env('SAFARICOM_BALANCE_TIMEOUT_URL')));
+        $resultURL       = self::formatUrl((string)Settings::get('safaricom.balance_result_url', env('SAFARICOM_BALANCE_RESULT_URL')));
 
         $payload = [
-            'Initiator'          => env('SAFARICOM_INITIATOR_NAME'),
-            'SecurityCredential' => env('SecurityCredential'),
+            'Initiator'          => Settings::get('safaricom.initiator_name', env('SAFARICOM_INITIATOR_NAME')),
+            'SecurityCredential' => Settings::get('safaricom.security_credential', env('SecurityCredential')),
             'CommandID'          => 'AccountBalance',
-            'PartyA'             => env('SAFARICOM_SHORTCODE'),
+            'PartyA'             => $short,
             'IdentifierType'     => '4',
             'Remarks'            => 'Balance Inquiry',
             'QueueTimeOutURL'    => $queueTimeOutURL,
@@ -298,7 +307,8 @@ public static function initiateB2BPayment($receiverShortCode, $amount, $remarks,
         ];
     }
 
-    $url = env('SAFARICOM_DARAJA_BASE_URL') . '/mpesa/b2b/v1/paymentrequest';
+    $base = rtrim((string)Settings::get('safaricom.base_url', env('SAFARICOM_DARAJA_BASE_URL')), '/');
+    $url = $base . '/mpesa/b2b/v1/paymentrequest';
 
     $headers = [
         'Authorization' => 'Bearer ' . $accessToken,
@@ -367,17 +377,17 @@ public static function initiateB2BTillPayment($tillNumber, $amount, $remarks)
     ];
 
     $payload = [
-        'Initiator'              => env('SAFARICOM_INITIATOR_NAME'),
-        'SecurityCredential'     => env('SecurityCredential'),
+        'Initiator'              => Settings::get('safaricom.initiator_name', env('SAFARICOM_INITIATOR_NAME')),
+        'SecurityCredential'     => Settings::get('safaricom.security_credential', env('SecurityCredential')),
         'CommandID'              => 'BusinessBuyGoods', // Command for Till number payments
         'SenderIdentifierType'   => '4',
         'RecieverIdentifierType' => '4', // API expects this misspelling
         'Amount'                 => $amount,
-        'PartyA'                 => env('SAFARICOM_SHORTCODE'), // Your shortcode
+        'PartyA'                 => Settings::get('safaricom.shortcode', env('SAFARICOM_SHORTCODE')), // Your shortcode
         'PartyB'                 => $tillNumber,               // The Till number to receive payment
         'Remarks'                => $remarks,
-        'QueueTimeOutURL'        => self::formatUrl(env('SAFARICOM_B2B_TIMEOUT_URL')),
-        'ResultURL'              => self::formatUrl(env('SAFARICOM_B2B_RESULT_URL')),
+        'QueueTimeOutURL'        => self::formatUrl((string)Settings::get('safaricom.b2b_timeout_url', env('SAFARICOM_B2B_TIMEOUT_URL'))),
+        'ResultURL'              => self::formatUrl((string)Settings::get('safaricom.b2b_result_url', env('SAFARICOM_B2B_RESULT_URL'))),
     ];
 
     try {
@@ -420,8 +430,8 @@ public static function validateStkTransaction(string $checkoutRequestID): array
     }
 
     $timestamp = now()->format('YmdHis');
-    $shortCode = env('SAFARICOM_SHORTCODE');
-    $passkey   = env('SAFARICOM_PASSKEY');
+    $shortCode = (string)Settings::get('safaricom.shortcode', env('SAFARICOM_SHORTCODE'));
+    $passkey   = (string)Settings::get('safaricom.passkey', env('SAFARICOM_PASSKEY'));
     $password  = base64_encode($shortCode . $passkey . $timestamp);
 
     $payload = [
@@ -431,7 +441,8 @@ public static function validateStkTransaction(string $checkoutRequestID): array
         'CheckoutRequestID' => $checkoutRequestID,
     ];
 
-    $url = rtrim(env('SAFARICOM_DARAJA_BASE_URL'), '/') . '/mpesa/stkpushquery/v1/query';
+    $base = rtrim((string)Settings::get('safaricom.base_url', env('SAFARICOM_DARAJA_BASE_URL')), '/');
+    $url = $base . '/mpesa/stkpushquery/v1/query';
 
     try {
         $response = Http::withHeaders([
