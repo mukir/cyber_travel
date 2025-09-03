@@ -31,7 +31,13 @@ class AdminSettingsController extends Controller
             'balance_result_url'  => SettingsHelper::get('safaricom.balance_result_url', env('SAFARICOM_BALANCE_RESULT_URL')),
         ];
 
-        return view('admin.settings', compact('defaultCurrency', 'currencies', 'safaricom'));
+        $paypal = [
+            'client_id'     => SettingsHelper::get('paypal.client_id', env('PAYPAL_CLIENT_ID')),
+            'client_secret' => SettingsHelper::get('paypal.client_secret', env('PAYPAL_CLIENT_SECRET')),
+            'base_url'      => SettingsHelper::get('paypal.base_url', env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com')),
+        ];
+
+        return view('admin.settings', compact('defaultCurrency', 'currencies', 'safaricom', 'paypal'));
     }
 
     public function update(Request $request)
@@ -52,6 +58,10 @@ class AdminSettingsController extends Controller
             'safaricom.b2b_result_url' => ['nullable', 'url'],
             'safaricom.balance_timeout_url' => ['nullable', 'url'],
             'safaricom.balance_result_url' => ['nullable', 'url'],
+            // PayPal
+            'paypal.client_id'     => ['nullable', 'string'],
+            'paypal.client_secret' => ['nullable', 'string'],
+            'paypal.base_url'      => ['nullable', 'url'],
         ]);
 
         SettingsHelper::set('default_currency', strtoupper(trim($data['default_currency'])));
