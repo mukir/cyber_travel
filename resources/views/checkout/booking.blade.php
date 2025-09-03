@@ -46,12 +46,13 @@
         </div>
 
         <div>
+          @if($booking->currency === 'KES')
           <h3 class="text-lg font-semibold">Pay with M-PESA</h3>
           <form id="form-stk" action="{{ route('client.bookings.pay', $booking) }}" method="POST" class="mt-3 grid sm:grid-cols-3 gap-3 items-end">
             @csrf
             <div>
               <label class="block text-sm text-gray-700">Phone (07XXXXXXXX)</label>
-              <input type="tel" name="phone" value="{{ old('phone', $booking->customer_phone) }}" class="mt-1 w-full rounded border p-2" required />
+              <input type="tel" name="phone" value="{{ old('phone', $booking->customer_phone) }}" class="mt-1 w-full rounded border p-2" required pattern="^(?:0|\+?254)?7\d{8}$" title="Enter a valid Safaricom number e.g. 07XXXXXXXX" />
             </div>
             <div>
               <label class="block text-sm text-gray-700">Amount</label>
@@ -75,8 +76,10 @@
             <span id="mpesa-spinner" class="hidden inline-block w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
             <span id="mpesa-status-text"></span>
           </div>
+          @endif
         </div>
 
+        @if(($paypalEnabled ?? true) && $paypalClientId && (max($booking->total_amount - $booking->amount_paid, 0) >= 1))
         <div>
           <h3 class="text-lg font-semibold">Pay with PayPal</h3>
           <div class="mt-2">
@@ -85,6 +88,7 @@
           </div>
           <div id="paypal-buttons" class="mt-3"></div>
         </div>
+        @endif
       </div>
 
       <div class="bg-white shadow sm:rounded-lg p-6 h-max">
@@ -96,7 +100,7 @@
     </div>
   </div>
 
-  @if($paypalClientId)
+  @if(($paypalEnabled ?? true) && $paypalClientId)
     <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $currency }}"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {

@@ -345,8 +345,9 @@ class PaymentController extends Controller
     {
         abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
         $paypalClientId = Settings::get('paypal.client_id', env('PAYPAL_CLIENT_ID'));
+        $paypalEnabled = (bool) Settings::get('paypal.enabled', true);
         $currency = $booking->currency ?: 'KES';
-        return view('checkout.booking', compact('booking', 'paypalClientId', 'currency'));
+        return view('checkout.booking', compact('booking', 'paypalClientId', 'paypalEnabled', 'currency'));
     }
 
     // PayPal completion endpoint (after client-side capture). Optionally verifies via server if secret provided.
@@ -361,10 +362,27 @@ class PaymentController extends Controller
 
         $orderId = $data['order_id'];
         $amount = (float)$data['amount'];
+        // Clamp to remaining balance server-side to avoid overpayments
+        $remaining = max((float)$booking->total_amount - (float)$booking->amount_paid, 0);
+        if ($remaining < 0.01) {
+            return back()->with('error', 'No outstanding balance to pay.');
+        }
+        if ($amount > $remaining + 0.01) {
+            $amount = $remaining;
+        }
 
         // Optional server verification if secret present
+        // Respect enabled toggle
+        if (!Settings::get('paypal.enabled', true)) {
+            return back()->with('error', 'PayPal is disabled.');
+        }
+
         $secret = Settings::get('paypal.client_secret', env('PAYPAL_CLIENT_SECRET'));
-        $base = Settings::get('paypal.base_url', env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com'));
+        $base = Settings::get('paypal.base_url');
+        if (!$base) {
+            $mode = Settings::get('paypal.mode', env('PAYPAL_MODE', 'sandbox'));
+            $base = $mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+        }
         if ($secret) {
             try {
                 $clientId = Settings::get('paypal.client_id', env('PAYPAL_CLIENT_ID'));

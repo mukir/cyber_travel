@@ -32,6 +32,8 @@ class AdminSettingsController extends Controller
         ];
 
         $paypal = [
+            'enabled'       => (bool) SettingsHelper::get('paypal.enabled', true),
+            'mode'          => SettingsHelper::get('paypal.mode', env('PAYPAL_MODE', 'sandbox')),
             'client_id'     => SettingsHelper::get('paypal.client_id', env('PAYPAL_CLIENT_ID')),
             'client_secret' => SettingsHelper::get('paypal.client_secret', env('PAYPAL_CLIENT_SECRET')),
             'base_url'      => SettingsHelper::get('paypal.base_url', env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com')),
@@ -59,6 +61,8 @@ class AdminSettingsController extends Controller
             'safaricom.balance_timeout_url' => ['nullable', 'url'],
             'safaricom.balance_result_url' => ['nullable', 'url'],
             // PayPal
+            'paypal.enabled'      => ['nullable', 'boolean'],
+            'paypal.mode'         => ['nullable', 'in:sandbox,live'],
             'paypal.client_id'     => ['nullable', 'string'],
             'paypal.client_secret' => ['nullable', 'string'],
             'paypal.base_url'      => ['nullable', 'url'],
@@ -66,8 +70,16 @@ class AdminSettingsController extends Controller
 
         SettingsHelper::set('default_currency', strtoupper(trim($data['default_currency'])));
 
+        // If mode provided and base_url empty, derive automatically based on mode
+        if (!filled($data['paypal.base_url'] ?? null) && isset($data['paypal.mode'])) {
+            $derived = $data['paypal.mode'] === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+            SettingsHelper::set('paypal.base_url', $derived);
+        }
+
         foreach ($data as $key => $value) {
             if ($key === 'default_currency') continue;
+            // Skip setting empty base_url to avoid wiping derived or existing value
+            if ($key === 'paypal.base_url' && !filled($value)) continue;
             SettingsHelper::set($key, $value);
         }
 
