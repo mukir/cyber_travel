@@ -47,6 +47,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/client/dashboard', [ClientController::class, 'dashboard'])->name('client.dashboard');
     Route::get('/client/biodata', [ClientController::class, 'editBiodata'])->name('client.biodata');
     Route::post('/client/biodata', [ClientController::class, 'storeBiodata'])->name('client.biodata.store');
+    Route::get('/client/enquiry', [ClientController::class, 'enquiry'])->name('client.enquiry');
+    Route::post('/client/enquiry', [ClientController::class, 'storeEnquiry'])->name('client.enquiry.store');
     Route::get('/client/documents', [ClientController::class, 'documents'])->name('client.documents');
     Route::post('/client/documents', [ClientController::class, 'uploadDocument'])->name('client.documents.upload');
     Route::delete('/client/documents/{document}', [ClientController::class, 'deleteDocument'])->name('client.documents.delete');

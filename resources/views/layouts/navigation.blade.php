@@ -113,6 +113,9 @@
             <x-responsive-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')">
                 {{ __('Apply for Job') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('client.enquiry')" :active="request()->routeIs('client.enquiry')">
+                {{ __('Service Enquiry') }}
+            </x-responsive-nav-link>
 
             @endif
 
