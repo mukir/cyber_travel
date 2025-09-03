@@ -111,8 +111,10 @@ class ClientController extends Controller
         $docsUploaded = $requiredDocs->filter(fn($d) => $uploaded->contains($d))->count();
         $missingDocs = $requiredDocs->reject(fn($d) => $uploaded->contains($d))->values();
 
-        // 50/50 weighting between profile fields and documents
-        $completeness = (int) round((($fieldsTotal ? $fieldsFilled / $fieldsTotal : 1) + ($docsTotal ? $docsUploaded / $docsTotal : 1)) * 50);
+        // Weighting between profile fields and documents (60% / 40%)
+        $fieldsFraction = $fieldsTotal ? ($fieldsFilled / $fieldsTotal) : 1;
+        $docsFraction   = $docsTotal ? ($docsUploaded / $docsTotal) : 1;
+        $completeness   = (int) round(($fieldsFraction * 0.6 + $docsFraction * 0.4) * 100);
 
         return view('client.biodata', compact('profile', 'fieldsFilled', 'fieldsTotal', 'docsUploaded', 'docsTotal', 'missingDocs', 'completeness'));
     }
