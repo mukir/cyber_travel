@@ -109,6 +109,24 @@
 
           <h3 class="text-lg font-semibold mt-6">PayPal</h3>
           <div class="grid md:grid-cols-2 gap-4">
+            <div class="md:col-span-2 flex items-center gap-3">
+              <input type="hidden" name="paypal.enabled" value="0">
+              <label class="inline-flex items-center gap-2">
+                <input type="checkbox" name="paypal.enabled" value="1" class="rounded border" @checked(old('paypal.enabled', $paypal['enabled']) ? true : false) />
+                <span class="text-sm text-gray-700">Enable PayPal</span>
+              </label>
+              @error('paypal.enabled')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+            </div>
+
+            <div>
+              <label class="block text-sm text-gray-700">Mode</label>
+              <select name="paypal.mode" class="mt-1 w-full rounded border p-2">
+                @php($m = old('paypal.mode', $paypal['mode']))
+                <option value="sandbox" @selected($m==='sandbox')>Sandbox</option>
+                <option value="live" @selected($m==='live')>Live</option>
+              </select>
+              @error('paypal.mode')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
+            </div>
             <div class="md:col-span-2">
               <label class="block text-sm text-gray-700">Client ID</label>
               <input type="text" name="paypal.client_id" value="{{ old('paypal.client_id', $paypal['client_id']) }}" class="mt-1 w-full rounded border p-2" />
@@ -116,13 +134,14 @@
             </div>
             <div class="md:col-span-2">
               <label class="block text-sm text-gray-700">Client Secret</label>
-              <input type="text" name="paypal.client_secret" value="{{ old('paypal.client_secret', $paypal['client_secret']) }}" class="mt-1 w-full rounded border p-2" />
+              <input type="password" name="paypal.client_secret" value="{{ old('paypal.client_secret', $paypal['client_secret']) }}" class="mt-1 w-full rounded border p-2" />
               @error('paypal.client_secret')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
             </div>
             <div class="md:col-span-2">
               <label class="block text-sm text-gray-700">Base API URL</label>
               <input type="url" name="paypal.base_url" value="{{ old('paypal.base_url', $paypal['base_url']) }}" class="mt-1 w-full rounded border p-2" placeholder="https://api-m.sandbox.paypal.com" />
               @error('paypal.base_url')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
+              <p class="mt-1 text-xs text-gray-500">Leave blank to auto-set from Mode.</p>
             </div>
           </div>
 
