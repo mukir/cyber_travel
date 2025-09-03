@@ -10,7 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Mail;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable 
 {
     use HasFactory, Notifiable;
 
@@ -35,13 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    /**
-     * Send the email verification notification.
-     */
-    public function sendEmailVerificationNotification()
-    {
-        Mail::to($this->email)->send(new VerifyEmailMail($this));
-    }
+   
 
     // ---- Role Helpers ----
     public function is_admin(): bool

@@ -1,26 +1,16 @@
 <x-guest-layout>
     <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
         <!-- Logo -->
-        <div class="text-center mb-6">
+        <!-- <div class="text-center mb-6">
             <img src="{{ asset('images/logo.png') }}" alt="Cyber Travel" class="mx-auto" style="width: 120px;">
-        </div>
+        </div> -->
 
         <!-- Title -->
         <h1 class="text-2xl font-bold text-gray-900 text-center mb-6">
             Create Your Account
         </h1>
 
-        <!-- Email Verification Notice -->
-        <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <div class="flex items-center">
-                <svg class="w-5 h-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                </svg>
-                <p class="text-sm text-blue-700">
-                    <strong>Secure Registration:</strong> We'll send you an email verification link to activate your account.
-                </p>
-            </div>
-        </div>
+       
 
         <form method="POST" action="{{ route('register') }}">
             @csrf
