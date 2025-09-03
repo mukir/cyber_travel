@@ -32,34 +32,38 @@
             <dt class="text-gray-600">Total</dt>
             <dd class="text-gray-900 font-semibold">{{ number_format($booking->total_amount, 2) }} {{ $booking->currency }}</dd>
             <dt class="text-gray-600">Paid</dt>
-            <dd class="text-gray-900">{{ number_format($booking->amount_paid, 2) }} {{ $booking->currency }}</dd>
+            <dd class="text-gray-900"><span id="amount-paid" data-amount="{{ (float)$booking->amount_paid }}">{{ number_format($booking->amount_paid, 2) }}</span> {{ $booking->currency }}</dd>
             <dt class="text-gray-600">Balance</dt>
-            <dd class="text-gray-900">{{ number_format(max($booking->total_amount - $booking->amount_paid, 0), 2) }} {{ $booking->currency }}</dd>
+            @php($remaining = max($booking->total_amount - $booking->amount_paid, 0))
+            <dd class="text-gray-900"><span id="amount-balance" data-amount="{{ $remaining }}">{{ number_format($remaining, 2) }}</span> {{ $booking->currency }}</dd>
           </dl>
 
           <div class="mt-4 flex items-center gap-3 text-sm">
             <a class="text-emerald-700 hover:underline" href="{{ route('client.bookings.invoice', $booking) }}">Download Invoice</a>
-            @if($booking->amount_paid > 0)
-              <span class="text-gray-300">|</span>
-              <a class="text-emerald-700 hover:underline" href="{{ route('client.bookings.receipt', $booking) }}">Download Receipt</a>
-            @endif
+            <span id="receipt-divider" class="text-gray-300 {{ $booking->amount_paid > 0 ? '' : 'hidden' }}">|</span>
+            <a id="receipt-link" class="text-emerald-700 hover:underline {{ $booking->amount_paid > 0 ? '' : 'hidden' }}" href="{{ route('client.bookings.receipt', $booking) }}">Download Receipt</a>
           </div>
         </div>
 
         <div>
+          @if($booking->currency === 'KES')
           <h3 class="text-lg font-semibold">Pay with M-PESA</h3>
           <form id="form-stk" action="{{ route('client.bookings.pay', $booking) }}" method="POST" class="mt-3 grid sm:grid-cols-3 gap-3 items-end">
             @csrf
             <div>
               <label class="block text-sm text-gray-700">Phone (07XXXXXXXX)</label>
-              <input type="tel" name="phone" value="{{ old('phone', $booking->customer_phone) }}" class="mt-1 w-full rounded border p-2" required />
+              <input type="tel" name="phone" value="{{ old('phone', $booking->customer_phone) }}" class="mt-1 w-full rounded border p-2" required pattern="^(?:0|\+?254)?7\d{8}$" title="Enter a valid Safaricom number e.g. 07XXXXXXXX" />
             </div>
             <div>
               <label class="block text-sm text-gray-700">Amount</label>
-              <input type="number" step="0.01" min="1" max="{{ max($booking->total_amount - $booking->amount_paid, 0) }}" name="amount" value="{{ number_format(max($booking->total_amount - $booking->amount_paid, 0), 2, '.', '') }}" class="mt-1 w-full rounded border p-2" />
+              @php($disabled = $remaining < 1)
+              <input id="stk-amount" type="number" step="1" min="1" max="{{ (int)ceil($remaining) }}" name="amount" value="{{ $remaining >= 1 ? (int)ceil($remaining) : '' }}" class="mt-1 w-full rounded border p-2" {{ $disabled ? 'disabled' : '' }} />
+              @if($disabled)
+                <p class="mt-1 text-xs text-gray-500">No outstanding balance to pay.</p>
+              @endif
             </div>
             <div>
-              <button id="btn-stk" class="w-full rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Send STK</button>
+              <button id="btn-stk" class="w-full rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700" {{ $disabled ? 'disabled' : '' }}>Send STK</button>
             </div>
           </form>
           @if($booking->mpesa_checkout_id)
@@ -72,8 +76,10 @@
             <span id="mpesa-spinner" class="hidden inline-block w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
             <span id="mpesa-status-text"></span>
           </div>
+          @endif
         </div>
 
+        @if(($paypalEnabled ?? true) && $paypalClientId && (max($booking->total_amount - $booking->amount_paid, 0) >= 1))
         <div>
           <h3 class="text-lg font-semibold">Pay with PayPal</h3>
           <div class="mt-2">
@@ -82,6 +88,7 @@
           </div>
           <div id="paypal-buttons" class="mt-3"></div>
         </div>
+        @endif
       </div>
 
       <div class="bg-white shadow sm:rounded-lg p-6 h-max">
@@ -93,7 +100,7 @@
     </div>
   </div>
 
-  @if($paypalClientId)
+  @if(($paypalEnabled ?? true) && $paypalClientId)
     <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $currency }}"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -198,10 +205,39 @@
           }
           const data = await res.json();
           if (data.status === 'success') {
-            setStatus('Payment confirmed. Updating...', 'success', false);
-            showBanner('success', 'Payment confirmed. Updating your booking...');
+            setStatus('Payment confirmed.', 'success', false);
+            showBanner('success', 'Payment confirmed.');
             clearInterval(timer);
-            setTimeout(() => window.location.reload(), 800);
+            try {
+              const amountPaid = Number(data.amount_paid ?? 0);
+              const totalAmount = Number(data.total_amount ?? 0);
+              const balance = Math.max(totalAmount - amountPaid, 0);
+              const fmt = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const amountPaidEl = document.getElementById('amount-paid');
+              const amountBalanceEl = document.getElementById('amount-balance');
+              if (amountPaidEl) { amountPaidEl.dataset.amount = String(amountPaid); amountPaidEl.textContent = fmt(amountPaid); }
+              if (amountBalanceEl) { amountBalanceEl.dataset.amount = String(balance); amountBalanceEl.textContent = fmt(balance); }
+              // Update statuses without reload
+              const card = Array.from(document.querySelectorAll('div.bg-white')).find(el => el.textContent.includes('Payment Status'));
+              if (card) {
+                const paras = card.querySelectorAll('p');
+                const currEl = paras[0]?.querySelector('span');
+                const bookEl = paras[1]?.querySelector('span');
+                const paidAtEl = paras[2]?.querySelector('span');
+                if (currEl && data.payment_status) currEl.textContent = String(data.payment_status).replace(/_/g, ' ');
+                if (bookEl && data.booking_status) bookEl.textContent = String(data.booking_status).replace(/_/g, ' ');
+                if (paidAtEl && (data.payment_status === 'full' || data.booking_status === 'paid')) {
+                  const now = new Date(); const pad=(x)=>String(x).padStart(2,'0');
+                  paidAtEl.textContent = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+                }
+              }
+              const receiptLink = document.getElementById('receipt-link');
+              const receiptDivider = document.getElementById('receipt-divider');
+              if (amountPaid > 0) { receiptLink?.classList.remove('hidden'); receiptDivider?.classList.remove('hidden'); }
+              const amountInputStk = formStk?.querySelector('input[name="amount"]');
+              if (amountInputStk) { amountInputStk.max = balance.toFixed(2); }
+            } catch (_) {}
+            setButtonsDisabled(false);
           } else if (data.status === 'failed') {
             setStatus('Payment failed: ' + (data.message || 'Declined'), 'error', false);
             showBanner('error', 'Payment failed: ' + (data.message || 'Declined'));

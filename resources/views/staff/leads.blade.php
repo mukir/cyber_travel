@@ -67,7 +67,27 @@
           <tbody class="bg-white divide-y divide-gray-200">
             @forelse(($leads ?? []) as $lead)
               <tr>
-                <td class="px-6 py-4 text-sm text-gray-900">{{ $lead->name }}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">{{ $lead->name }}
+                  @php($meta = json_decode($lead->notes, true))
+                  @if(is_array($meta) && isset($meta['service_type']))
+                    <div class="mt-1 text-xs text-gray-600">
+                      @if(($meta['service_type'] ?? '')==='job')
+                        Enquiry: Job @if(!empty($meta['job_id']))#{{ $meta['job_id'] }}@endif @if(!empty($meta['package_id']))(Pkg #{{ $meta['package_id'] }})@endif
+                        @if(!empty($meta['experience_years'])) • {{ $meta['experience_years'] }} yrs exp @endif
+                        @if(!empty($meta['available_from'])) • From {{ $meta['available_from'] }} @endif
+                        @if(isset($meta['has_passport'])) • Passport: {{ $meta['has_passport'] ? 'Yes' : 'No' }} @endif
+                      @else
+                        Enquiry: Tour @if(!empty($meta['destination'])) • {{ $meta['destination'] }} @endif
+                        @if(!empty($meta['start_date']) || !empty($meta['end_date'])) • {{ $meta['start_date'] ?? '?' }}→{{ $meta['end_date'] ?? '?' }} @endif
+                        @if(isset($meta['adults']) || isset($meta['children'])) • {{ (int)($meta['adults'] ?? 0) }}A, {{ (int)($meta['children'] ?? 0) }}C @endif
+                        @if(!empty($meta['budget'])) • Budget {{ $meta['budget'] }} @endif
+                      @endif
+                      @if(!empty($meta['message']))
+                        <div class="truncate">“{{ \Illuminate\Support\Str::limit($meta['message'], 80) }}”</div>
+                      @endif
+                    </div>
+                  @endif
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-700">
                   <div>{{ $lead->email }}</div>
                   <div class="text-xs text-gray-500">{{ $lead->phone }}</div>

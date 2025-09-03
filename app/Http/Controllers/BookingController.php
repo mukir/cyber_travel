@@ -7,6 +7,7 @@ use App\Models\Job;
 use App\Models\JobPackage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\Settings;
 
 class BookingController extends Controller
 {
@@ -39,7 +40,7 @@ class BookingController extends Controller
             'quantity' => $data['quantity'],
             'start_date' => $data['start_date'] ?? null,
             'total_amount' => $total,
-            'currency' => config('app.currency', env('APP_CURRENCY', 'KES')),
+            'currency' => Settings::get('default_currency', config('app.currency', env('APP_CURRENCY', 'KES'))),
             'status' => 'pending',
             'customer_name' => $data['customer_name'],
             'customer_email' => $data['customer_email'],

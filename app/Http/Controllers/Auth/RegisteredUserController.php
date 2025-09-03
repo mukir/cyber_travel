@@ -47,6 +47,13 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        $target = route('client.dashboard', absolute: false);
+        if (method_exists($user, 'is_admin') && $user->is_admin()) {
+            $target = route('admin.dashboard', absolute: false);
+        } elseif (method_exists($user, 'is_staff') && $user->is_staff()) {
+            $target = route('staff.dashboard', absolute: false);
+        }
+
+        return redirect($target);
     }
 }

@@ -12,8 +12,11 @@ use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
+})->name('home');
 
 // Referral capture
 Route::get('/r/{code}', function ($code) {
@@ -26,7 +29,14 @@ Route::get('/jobs/{job:slug}', [JobController::class, 'show'])->name('jobs.show'
 Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $user = auth()->user();
+    if ($user && method_exists($user, 'is_admin') && $user->is_admin()) {
+        return redirect()->route('admin.dashboard');
+    }
+    if ($user && method_exists($user, 'is_staff') && $user->is_staff()) {
+        return redirect()->route('staff.dashboard');
+    }
+    return redirect()->route('client.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -37,8 +47,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/client/dashboard', [ClientController::class, 'dashboard'])->name('client.dashboard');
     Route::get('/client/biodata', [ClientController::class, 'editBiodata'])->name('client.biodata');
     Route::post('/client/biodata', [ClientController::class, 'storeBiodata'])->name('client.biodata.store');
+    Route::get('/client/enquiry', [ClientController::class, 'enquiry'])->name('client.enquiry');
+    Route::post('/client/enquiry', [ClientController::class, 'storeEnquiry'])->name('client.enquiry.store');
     Route::get('/client/documents', [ClientController::class, 'documents'])->name('client.documents');
     Route::post('/client/documents', [ClientController::class, 'uploadDocument'])->name('client.documents.upload');
+    Route::delete('/client/documents/{document}', [ClientController::class, 'deleteDocument'])->name('client.documents.delete');
+    Route::post('/client/documents/{document}/replace', [ClientController::class, 'replaceDocument'])->name('client.documents.replace');
+    Route::post('/client/documents/{document}/note', [ClientController::class, 'updateDocumentNote'])->name('client.documents.note');
     Route::get('/client/bookings', [ClientController::class, 'bookings'])->name('client.bookings');
     Route::post('/client/bookings/{booking}/pay', [PaymentController::class, 'payBooking'])->name('client.bookings.pay');
     Route::post('/client/bookings/{booking}/verify', [PaymentController::class, 'verifyBooking'])->name('client.bookings.verify');
@@ -73,6 +88,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/payments/reminders', [\App\Http\Controllers\AdminPaymentController::class, 'sendReminders'])->name('payments.reminders');
         Route::get('/payments/export/csv', [\App\Http\Controllers\AdminPaymentController::class, 'exportCsv'])->name('payments.export.csv');
         Route::get('/payments/export/pdf', [\App\Http\Controllers\AdminPaymentController::class, 'exportPdf'])->name('payments.export.pdf');
+        // Settings
+        Route::get('/settings', [\App\Http\Controllers\AdminSettingsController::class, 'index'])->name('settings');
+        Route::post('/settings', [\App\Http\Controllers\AdminSettingsController::class, 'update'])->name('settings.update');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
         Route::get('/reports/bookings/{period}.{format}', function($period, $format) {
             // Convenience redirect to named routes

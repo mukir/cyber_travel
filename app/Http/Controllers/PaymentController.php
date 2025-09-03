@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Helpers\Settings;
 
 class PaymentController extends Controller
 {
@@ -162,8 +163,17 @@ class PaymentController extends Controller
         }
 
         $amount = (float)($data['amount'] ?? $booking->total_amount);
-        if ($amount > (float)$booking->total_amount) {
-            $amount = (float)$booking->total_amount;
+
+        // Clamp to remaining balance and guard against non-positive balance
+        $remaining = max((float)$booking->total_amount - (float)$booking->amount_paid, 0);
+        if ($remaining < 1) {
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'error', 'message' => 'No outstanding balance to pay.']);
+            }
+            return back()->with('error', 'No outstanding balance to pay.');
+        }
+        if ($amount > $remaining) {
+            $amount = $remaining;
         }
 
         $reference = 'BK' . $booking->id;
@@ -334,9 +344,10 @@ class PaymentController extends Controller
     public function checkout(Booking $booking)
     {
         abort_unless((int)$booking->user_id === (int)Auth::id(), 403);
-        $paypalClientId = env('PAYPAL_CLIENT_ID');
+        $paypalClientId = Settings::get('paypal.client_id', env('PAYPAL_CLIENT_ID'));
+        $paypalEnabled = (bool) Settings::get('paypal.enabled', true);
         $currency = $booking->currency ?: 'KES';
-        return view('checkout.booking', compact('booking', 'paypalClientId', 'currency'));
+        return view('checkout.booking', compact('booking', 'paypalClientId', 'paypalEnabled', 'currency'));
     }
 
     // PayPal completion endpoint (after client-side capture). Optionally verifies via server if secret provided.
@@ -351,13 +362,31 @@ class PaymentController extends Controller
 
         $orderId = $data['order_id'];
         $amount = (float)$data['amount'];
+        // Clamp to remaining balance server-side to avoid overpayments
+        $remaining = max((float)$booking->total_amount - (float)$booking->amount_paid, 0);
+        if ($remaining < 0.01) {
+            return back()->with('error', 'No outstanding balance to pay.');
+        }
+        if ($amount > $remaining + 0.01) {
+            $amount = $remaining;
+        }
 
         // Optional server verification if secret present
-        $secret = env('PAYPAL_CLIENT_SECRET');
-        $base = env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com');
+        // Respect enabled toggle
+        if (!Settings::get('paypal.enabled', true)) {
+            return back()->with('error', 'PayPal is disabled.');
+        }
+
+        $secret = Settings::get('paypal.client_secret', env('PAYPAL_CLIENT_SECRET'));
+        $base = Settings::get('paypal.base_url');
+        if (!$base) {
+            $mode = Settings::get('paypal.mode', env('PAYPAL_MODE', 'sandbox'));
+            $base = $mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+        }
         if ($secret) {
             try {
-                $tokenResp = \Illuminate\Support\Facades\Http::asForm()->withBasicAuth(env('PAYPAL_CLIENT_ID'), $secret)
+                $clientId = Settings::get('paypal.client_id', env('PAYPAL_CLIENT_ID'));
+                $tokenResp = \Illuminate\Support\Facades\Http::asForm()->withBasicAuth($clientId, $secret)
                     ->post($base.'/v1/oauth2/token', ['grant_type' => 'client_credentials'])
                     ->json();
                 $access = $tokenResp['access_token'] ?? null;
