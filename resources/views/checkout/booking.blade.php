@@ -32,17 +32,15 @@
             <dt class="text-gray-600">Total</dt>
             <dd class="text-gray-900 font-semibold">{{ number_format($booking->total_amount, 2) }} {{ $booking->currency }}</dd>
             <dt class="text-gray-600">Paid</dt>
-            <dd class="text-gray-900">{{ number_format($booking->amount_paid, 2) }} {{ $booking->currency }}</dd>
+            <dd class="text-gray-900"><span id="amount-paid" data-amount="{{ (float)$booking->amount_paid }}">{{ number_format($booking->amount_paid, 2) }}</span> {{ $booking->currency }}</dd>
             <dt class="text-gray-600">Balance</dt>
-            <dd class="text-gray-900">{{ number_format(max($booking->total_amount - $booking->amount_paid, 0), 2) }} {{ $booking->currency }}</dd>
+            <dd class="text-gray-900"><span id="amount-balance" data-amount="{{ max($booking->total_amount - $booking->amount_paid, 0) }}">{{ number_format(max($booking->total_amount - $booking->amount_paid, 0), 2) }}</span> {{ $booking->currency }}</dd>
           </dl>
 
           <div class="mt-4 flex items-center gap-3 text-sm">
             <a class="text-emerald-700 hover:underline" href="{{ route('client.bookings.invoice', $booking) }}">Download Invoice</a>
-            @if($booking->amount_paid > 0)
-              <span class="text-gray-300">|</span>
-              <a class="text-emerald-700 hover:underline" href="{{ route('client.bookings.receipt', $booking) }}">Download Receipt</a>
-            @endif
+            <span id="receipt-divider" class="text-gray-300 {{ $booking->amount_paid > 0 ? '' : 'hidden' }}">|</span>
+            <a id="receipt-link" class="text-emerald-700 hover:underline {{ $booking->amount_paid > 0 ? '' : 'hidden' }}" href="{{ route('client.bookings.receipt', $booking) }}">Download Receipt</a>
           </div>
         </div>
 
@@ -198,10 +196,39 @@
           }
           const data = await res.json();
           if (data.status === 'success') {
-            setStatus('Payment confirmed. Updating...', 'success', false);
-            showBanner('success', 'Payment confirmed. Updating your booking...');
+            setStatus('Payment confirmed.', 'success', false);
+            showBanner('success', 'Payment confirmed.');
             clearInterval(timer);
-            setTimeout(() => window.location.reload(), 800);
+            try {
+              const amountPaid = Number(data.amount_paid ?? 0);
+              const totalAmount = Number(data.total_amount ?? 0);
+              const balance = Math.max(totalAmount - amountPaid, 0);
+              const fmt = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const amountPaidEl = document.getElementById('amount-paid');
+              const amountBalanceEl = document.getElementById('amount-balance');
+              if (amountPaidEl) { amountPaidEl.dataset.amount = String(amountPaid); amountPaidEl.textContent = fmt(amountPaid); }
+              if (amountBalanceEl) { amountBalanceEl.dataset.amount = String(balance); amountBalanceEl.textContent = fmt(balance); }
+              // Update statuses without reload
+              const card = Array.from(document.querySelectorAll('div.bg-white')).find(el => el.textContent.includes('Payment Status'));
+              if (card) {
+                const paras = card.querySelectorAll('p');
+                const currEl = paras[0]?.querySelector('span');
+                const bookEl = paras[1]?.querySelector('span');
+                const paidAtEl = paras[2]?.querySelector('span');
+                if (currEl && data.payment_status) currEl.textContent = String(data.payment_status).replace(/_/g, ' ');
+                if (bookEl && data.booking_status) bookEl.textContent = String(data.booking_status).replace(/_/g, ' ');
+                if (paidAtEl && (data.payment_status === 'full' || data.booking_status === 'paid')) {
+                  const now = new Date(); const pad=(x)=>String(x).padStart(2,'0');
+                  paidAtEl.textContent = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+                }
+              }
+              const receiptLink = document.getElementById('receipt-link');
+              const receiptDivider = document.getElementById('receipt-divider');
+              if (amountPaid > 0) { receiptLink?.classList.remove('hidden'); receiptDivider?.classList.remove('hidden'); }
+              const amountInputStk = formStk?.querySelector('input[name="amount"]');
+              if (amountInputStk) { amountInputStk.max = balance.toFixed(2); }
+            } catch (_) {}
+            setButtonsDisabled(false);
           } else if (data.status === 'failed') {
             setStatus('Payment failed: ' + (data.message || 'Declined'), 'error', false);
             showBanner('error', 'Payment failed: ' + (data.message || 'Declined'));
