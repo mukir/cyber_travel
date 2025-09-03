@@ -34,7 +34,8 @@
             <dt class="text-gray-600">Paid</dt>
             <dd class="text-gray-900"><span id="amount-paid" data-amount="{{ (float)$booking->amount_paid }}">{{ number_format($booking->amount_paid, 2) }}</span> {{ $booking->currency }}</dd>
             <dt class="text-gray-600">Balance</dt>
-            <dd class="text-gray-900"><span id="amount-balance" data-amount="{{ max($booking->total_amount - $booking->amount_paid, 0) }}">{{ number_format(max($booking->total_amount - $booking->amount_paid, 0), 2) }}</span> {{ $booking->currency }}</dd>
+            @php($remaining = max($booking->total_amount - $booking->amount_paid, 0))
+            <dd class="text-gray-900"><span id="amount-balance" data-amount="{{ $remaining }}">{{ number_format($remaining, 2) }}</span> {{ $booking->currency }}</dd>
           </dl>
 
           <div class="mt-4 flex items-center gap-3 text-sm">
@@ -54,10 +55,14 @@
             </div>
             <div>
               <label class="block text-sm text-gray-700">Amount</label>
-              <input type="number" step="0.01" min="1" max="{{ max($booking->total_amount - $booking->amount_paid, 0) }}" name="amount" value="{{ number_format(max($booking->total_amount - $booking->amount_paid, 0), 2, '.', '') }}" class="mt-1 w-full rounded border p-2" />
+              @php($disabled = $remaining < 1)
+              <input id="stk-amount" type="number" step="1" min="1" max="{{ (int)ceil($remaining) }}" name="amount" value="{{ $remaining >= 1 ? (int)ceil($remaining) : '' }}" class="mt-1 w-full rounded border p-2" {{ $disabled ? 'disabled' : '' }} />
+              @if($disabled)
+                <p class="mt-1 text-xs text-gray-500">No outstanding balance to pay.</p>
+              @endif
             </div>
             <div>
-              <button id="btn-stk" class="w-full rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Send STK</button>
+              <button id="btn-stk" class="w-full rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700" {{ $disabled ? 'disabled' : '' }}>Send STK</button>
             </div>
           </form>
           @if($booking->mpesa_checkout_id)

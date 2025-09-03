@@ -162,8 +162,17 @@ class PaymentController extends Controller
         }
 
         $amount = (float)($data['amount'] ?? $booking->total_amount);
-        if ($amount > (float)$booking->total_amount) {
-            $amount = (float)$booking->total_amount;
+
+        // Clamp to remaining balance and guard against non-positive balance
+        $remaining = max((float)$booking->total_amount - (float)$booking->amount_paid, 0);
+        if ($remaining < 1) {
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'error', 'message' => 'No outstanding balance to pay.']);
+            }
+            return back()->with('error', 'No outstanding balance to pay.');
+        }
+        if ($amount > $remaining) {
+            $amount = $remaining;
         }
 
         $reference = 'BK' . $booking->id;
