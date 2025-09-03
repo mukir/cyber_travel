@@ -49,9 +49,9 @@
 
       <div class="bg-white shadow sm:rounded-lg p-6">
         <h3 class="text-lg font-semibold">Upload Document</h3>
-        <form method="POST" action="{{ route('client.documents.upload') }}" enctype="multipart/form-data" class="mt-4 grid md:grid-cols-3 gap-4 items-end">
+        <form method="POST" action="{{ route('client.documents.upload') }}" enctype="multipart/form-data" class="mt-4 grid md:grid-cols-6 gap-4 items-end">
           @csrf
-          <div>
+          <div class="md:col-span-2">
             <label class="block text-sm text-gray-700">Document Type</label>
             <select name="type" class="mt-1 w-full rounded border p-2 focus:border-emerald-500 focus:ring-emerald-500" required>
               <option value="passport">Passport</option>
@@ -64,6 +64,10 @@
           <div class="md:col-span-2">
             <label class="block text-sm text-gray-700">File</label>
             <input type="file" name="file" accept="application/pdf,image/*" class="mt-1 block w-full rounded border p-2 focus:border-emerald-500 focus:ring-emerald-500" required />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm text-gray-700">Note (optional)</label>
+            <input type="text" name="note" maxlength="500" class="mt-1 w-full rounded border p-2 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. Clear scan, both sides" />
           </div>
           <div>
             <button type="submit" class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Upload</button>
@@ -89,9 +93,30 @@
                     {{ $doc->validated ? 'Validated' : 'Pending' }}
                   </span>
                 </div>
-                <div class="mt-3 flex items-center gap-3 text-sm">
+                @if($doc->note)
+                  <p class="mt-2 text-sm text-gray-700"><span class="font-medium">Note:</span> {{ $doc->note }}</p>
+                @endif
+                <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
                   <a href="{{ Storage::url($doc->path) }}" target="_blank" class="text-emerald-700 hover:underline">View</a>
+                  <form action="{{ route('client.documents.replace', $doc) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+                    @csrf
+                    <input type="file" name="file" accept="application/pdf,image/*" required class="text-xs" />
+                    <button class="rounded bg-blue-600 px-2 py-1 text-white text-xs font-semibold hover:bg-blue-700">Replace</button>
+                  </form>
+                  <form action="{{ route('client.documents.delete', $doc) }}" method="POST" onsubmit="return confirm('Delete this document?');">
+                    @csrf
+                    @method('DELETE')
+                    <button class="rounded bg-red-600 px-2 py-1 text-white text-xs font-semibold hover:bg-red-700">Delete</button>
+                  </form>
                 </div>
+                <form action="{{ route('client.documents.note', $doc) }}" method="POST" class="mt-3">
+                  @csrf
+                  <label class="block text-xs text-gray-700">Update Note</label>
+                  <div class="mt-1 flex items-center gap-2">
+                    <input type="text" name="note" maxlength="500" value="{{ old('note', $doc->note) }}" class="w-full rounded border p-2 focus:border-emerald-500 focus:ring-emerald-500 text-sm" placeholder="Add a short note (optional)" />
+                    <button class="rounded bg-gray-800 px-3 py-2 text-white text-xs font-semibold hover:bg-black">Save</button>
+                  </div>
+                </form>
               </div>
             @endforeach
           </div>
