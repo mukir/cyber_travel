@@ -5,7 +5,18 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
+                    @php
+                        $u = Auth::user();
+                        $homeRoute = 'dashboard';
+                        if ($u && method_exists($u, 'is_admin') && $u->is_admin()) {
+                            $homeRoute = 'admin.dashboard';
+                        } elseif ($u && method_exists($u, 'is_staff') && $u->is_staff()) {
+                            $homeRoute = 'staff.dashboard';
+                        } elseif ($u && method_exists($u, 'is_client') && $u->is_client()) {
+                            $homeRoute = 'client.dashboard';
+                        }
+                    @endphp
+                    <a href="{{ route($homeRoute) }}">
                       <img src="{{ asset('images/logo.png') }}" style="width: 150px;">
                     </a>
                 </div>
@@ -70,7 +81,18 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+            @php
+                $u = Auth::user();
+                $homeRoute = 'dashboard';
+                if ($u && method_exists($u, 'is_admin') && $u->is_admin()) {
+                    $homeRoute = 'admin.dashboard';
+                } elseif ($u && method_exists($u, 'is_staff') && $u->is_staff()) {
+                    $homeRoute = 'staff.dashboard';
+                } elseif ($u && method_exists($u, 'is_client') && $u->is_client()) {
+                    $homeRoute = 'client.dashboard';
+                }
+            @endphp
+            <x-responsive-nav-link :href="route($homeRoute)" :active="request()->routeIs($homeRoute)">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 

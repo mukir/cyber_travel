@@ -28,7 +28,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $target = route('dashboard', absolute: false);
+        if ($user && method_exists($user, 'is_admin') && $user->is_admin()) {
+            $target = route('admin.dashboard', absolute: false);
+        } elseif ($user && method_exists($user, 'is_staff') && $user->is_staff()) {
+            $target = route('staff.dashboard', absolute: false);
+        } elseif ($user && method_exists($user, 'is_client') && $user->is_client()) {
+            $target = route('client.dashboard', absolute: false);
+        }
+
+        return redirect()->intended($target);
     }
 
     /**
