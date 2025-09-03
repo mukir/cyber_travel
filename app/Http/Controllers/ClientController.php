@@ -5,9 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\ClientDocument;
 use App\Models\ClientProfile;
 use App\Models\Booking;
+use App\Models\Job;
+use App\Models\JobPackage;
+use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewEnquiryMail;
 
 class ClientController extends Controller
 {
@@ -180,6 +185,128 @@ class ClientController extends Controller
             ->paginate(10);
 
         return view('client.bookings', compact('bookings'));
+    }
+
+    public function enquiry()
+    {
+        $profile = ClientProfile::firstOrCreate(
+            ['user_id' => Auth::id()],
+            ['name' => Auth::user()->name, 'email' => Auth::user()->email]
+        );
+
+        $jobs = Job::where('active', true)->orderBy('name')->get(['id','name']);
+        $packages = JobPackage::whereIn('job_id', $jobs->pluck('id'))->orderBy('name')->get(['id','job_id','name','price']);
+        $packagesByJob = $packages->groupBy('job_id')->map(function($list){
+            return $list->map(function($p){
+                return ['id' => $p->id, 'name' => $p->name, 'price' => (float)$p->price];
+            })->values();
+        });
+
+        return view('client.enquiry', [
+            'profile' => $profile,
+            'jobs' => $jobs,
+            'packagesByJob' => $packagesByJob,
+        ]);
+    }
+
+    public function storeEnquiry(Request $request)
+    {
+        $type = $request->input('service_type');
+        $rules = [
+            'service_type' => 'required|in:job,tour',
+            'message' => 'nullable|string|max:1000',
+        ];
+        if ($type === 'job') {
+            $rules = array_merge($rules, [
+                'job_id' => 'required|exists:service_jobs,id',
+                'package_id' => 'nullable|exists:job_packages,id',
+                'experience_years' => 'nullable|numeric|min:0|max:60',
+                'available_from' => 'nullable|date',
+                'has_passport' => 'nullable|boolean',
+                'education' => 'nullable|string|max:255',
+            ]);
+        } else {
+            $rules = array_merge($rules, [
+                'destination' => 'required|string|max:255',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after_or_equal:start_date',
+                'adults' => 'nullable|integer|min:1|max:20',
+                'children' => 'nullable|integer|min:0|max:20',
+                'budget' => 'nullable|numeric|min:0',
+                'accommodation' => 'nullable|string|max:255',
+            ]);
+        }
+
+        $data = $request->validate($rules);
+
+        $profile = ClientProfile::firstOrCreate(
+            ['user_id' => Auth::id()],
+            ['name' => Auth::user()->name, 'email' => Auth::user()->email]
+        );
+
+        // Choose a sales rep: prefer assigned on profile; fallback to first staff, then first admin
+        $salesRepId = $profile->sales_rep_id;
+        if (!$salesRepId) {
+            $salesRepId = optional(\App\Models\User::where('role', \App\Enums\UserRole::Staff)->orderBy('id')->first())->id
+                ?: optional(\App\Models\User::where('role', \App\Enums\UserRole::Admin)->orderBy('id')->first())->id
+                ?: Auth::id();
+        }
+
+        $user = Auth::user();
+
+        // Prepare structured notes as JSON
+        $payload = ['service_type' => $data['service_type']];
+        if ($data['service_type'] === 'job') {
+            $payload += [
+                'job_id' => $data['job_id'] ?? null,
+                'package_id' => $data['package_id'] ?? null,
+                'experience_years' => $data['experience_years'] ?? null,
+                'available_from' => $data['available_from'] ?? null,
+                'has_passport' => (bool)($data['has_passport'] ?? false),
+                'education' => $data['education'] ?? null,
+            ];
+        } else {
+            $payload += [
+                'destination' => $data['destination'] ?? null,
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
+                'adults' => isset($data['adults']) ? (int)$data['adults'] : null,
+                'children' => isset($data['children']) ? (int)$data['children'] : null,
+                'budget' => isset($data['budget']) ? (float)$data['budget'] : null,
+                'accommodation' => $data['accommodation'] ?? null,
+            ];
+        }
+        if (!empty($data['message'] ?? null)) {
+            $payload['message'] = $data['message'];
+        }
+
+        Lead::create([
+            'sales_rep_id' => $salesRepId,
+            'client_id' => $user->id,
+            'name' => $profile->name ?: $user->name,
+            'email' => $profile->email ?: $user->email,
+            'phone' => $profile->phone,
+            'stage' => 'new',
+            'status' => 'open',
+            'notes' => json_encode($payload),
+        ]);
+
+        // Notify assigned sales rep by email (best-effort)
+        $rep = \App\Models\User::find($salesRepId);
+        if ($rep && $rep->email) {
+            $enquirer = [
+                'name' => $profile->name ?: $user->name,
+                'email' => $profile->email ?: $user->email,
+                'phone' => $profile->phone,
+            ];
+            try {
+                Mail::to($rep->email)->send(new NewEnquiryMail($enquirer, $payload));
+            } catch (\Throwable $e) {
+                // ignore email failures
+            }
+        }
+
+        return redirect()->route('client.dashboard')->with('success', 'Your enquiry was sent. Our team will contact you.');
     }
 
     public function deleteDocument(Request $request, ClientDocument $document)

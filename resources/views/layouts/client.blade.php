@@ -15,4 +15,7 @@
                     <x-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')">
                         {{ __('Apply for Job') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('client.enquiry')" :active="request()->routeIs('client.enquiry')">
+                        {{ __('Service Enquiry') }}
+                    </x-nav-link>
                     @endif
