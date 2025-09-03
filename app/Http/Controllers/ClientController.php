@@ -7,6 +7,7 @@ use App\Models\ClientProfile;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ClientController extends Controller
 {
@@ -155,6 +156,7 @@ class ClientController extends Controller
         $data = $request->validate([
             'type' => 'required|string',
             'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'note' => 'nullable|string|max:500',
         ]);
 
         $path = $request->file('file')->store('documents');
@@ -163,9 +165,11 @@ class ClientController extends Controller
             'user_id' => Auth::id(),
             'type' => $data['type'],
             'path' => $path,
+            'validated' => false,
+            'note' => $data['note'] ?? null,
         ]);
 
-        return redirect()->route('client.documents');
+        return redirect()->route('client.documents')->with('success', 'Document uploaded.');
     }
 
     public function bookings()
@@ -176,5 +180,49 @@ class ClientController extends Controller
             ->paginate(10);
 
         return view('client.bookings', compact('bookings'));
+    }
+
+    public function deleteDocument(Request $request, ClientDocument $document)
+    {
+        abort_unless((int)$document->user_id === (int)Auth::id(), 403);
+        try {
+            if ($document->path) {
+                Storage::delete($document->path);
+            }
+        } catch (\Throwable $e) {
+            // ignore storage deletion errors
+        }
+        $document->delete();
+        return back()->with('success', 'Document deleted.');
+    }
+
+    public function replaceDocument(Request $request, ClientDocument $document)
+    {
+        abort_unless((int)$document->user_id === (int)Auth::id(), 403);
+        $data = $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        ]);
+        $old = $document->path;
+        $newPath = $request->file('file')->store('documents');
+        $document->update([
+            'path' => $newPath,
+            'validated' => false, // revalidation may be required after replacement
+        ]);
+        try {
+            if ($old) Storage::delete($old);
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        return back()->with('success', 'Document replaced.');
+    }
+
+    public function updateDocumentNote(Request $request, ClientDocument $document)
+    {
+        abort_unless((int)$document->user_id === (int)Auth::id(), 403);
+        $data = $request->validate([
+            'note' => 'nullable|string|max:500',
+        ]);
+        $document->update(['note' => $data['note'] ?? null]);
+        return back()->with('success', 'Note updated.');
     }
 }
