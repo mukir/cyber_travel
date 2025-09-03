@@ -73,6 +73,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/payments/reminders', [\App\Http\Controllers\AdminPaymentController::class, 'sendReminders'])->name('payments.reminders');
         Route::get('/payments/export/csv', [\App\Http\Controllers\AdminPaymentController::class, 'exportCsv'])->name('payments.export.csv');
         Route::get('/payments/export/pdf', [\App\Http\Controllers\AdminPaymentController::class, 'exportPdf'])->name('payments.export.pdf');
+        // Settings
+        Route::get('/settings', [\\App\\Http\\Controllers\\AdminSettingsController::class, 'index'])->name('settings');
+        Route::post('/settings', [\\App\\Http\\Controllers\\AdminSettingsController::class, 'update'])->name('settings.update');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
         Route::get('/reports/bookings/{period}.{format}', function($period, $format) {
             // Convenience redirect to named routes

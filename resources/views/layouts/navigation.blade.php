@@ -114,6 +114,9 @@
             <x-responsive-nav-link :href="route('admin.reports')" :active="request()->routeIs('admin.reports')">
                 {{ __('Reports') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.settings')" :active="request()->routeIs('admin.settings')">
+                {{ __('Settings') }}
+            </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.communications')" :active="request()->routeIs('admin.communications')">
                 {{ __('Communication') }}
             </x-responsive-nav-link>
