@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Mail\VerifyEmailMail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -30,6 +33,14 @@ class User extends Authenticatable
             'password'          => 'hashed',
             'role'              => UserRole::class, // cast role to enum
         ];
+    }
+
+    /**
+     * Send the email verification notification.
+     */
+    public function sendEmailVerificationNotification()
+    {
+        Mail::to($this->email)->send(new VerifyEmailMail($this));
     }
 
     // ---- Role Helpers ----
