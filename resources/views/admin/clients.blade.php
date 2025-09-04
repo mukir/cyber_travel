@@ -75,6 +75,9 @@
                                     @else
                                         <span class="text-gray-400" title="{{ empty($to) ? 'No phone on profile' : 'Invalid phone for WhatsApp' }}">WhatsApp</span>
                                     @endif
+                                    @if($latest && $balance > 0.01)
+                                        <a href="{{ route('admin.bookings.manualPayment', $latest) }}" class="text-amber-700 hover:underline">Record Payment</a>
+                                    @endif
                                     <form action="{{ route('admin.clients.destroy', $client) }}" method="POST" class="inline" onsubmit="return confirm('Delete client?');">
                                         @csrf
                                         @method('DELETE')

@@ -127,5 +127,77 @@ class AdminPaymentController extends Controller
         ]);
         return $pdf->download('payments.pdf');
     }
-}
 
+    // Show manual payment form for a booking
+    public function manualPaymentForm(Booking $booking)
+    {
+        $remaining = max(((float)$booking->total_amount) - ((float)$booking->amount_paid), 0);
+        return view('admin.manual_payment', [
+            'booking' => $booking->load(['user','job','package','payments']),
+            'remaining' => $remaining,
+        ]);
+    }
+
+    // Record a manual payment and update booking totals
+    public function manualPayment(Request $request, Booking $booking)
+    {
+        // Prevent double full-payment
+        $remaining = max(((float)$booking->total_amount) - ((float)$booking->amount_paid), 0);
+        if ($remaining < 0.01) {
+            return back()->with('error', 'This booking is already fully paid.');
+        }
+
+        $data = $request->validate([
+            'method' => ['required', 'in:cash,bank,manual'],
+            'amount' => ['nullable', 'numeric', 'min:0.01'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'receipt_number' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $amount = isset($data['amount']) ? (float)$data['amount'] : 0.0;
+        if ($amount <= 0.0) {
+            // Default to remaining if not provided
+            $amount = $remaining;
+        }
+        if ($amount > $remaining + 0.01) {
+            $amount = $remaining; // clamp to remaining
+        }
+
+        // Create payment as paid
+        $payment = Payment::create([
+            'booking_id' => $booking->id,
+            'method' => $data['method'],
+            'amount' => $amount,
+            'status' => 'paid',
+            'reference' => $data['reference'] ?? null,
+            'receipt_number' => $data['receipt_number'] ?? null,
+            'provider_payload' => null,
+        ]);
+
+        // Update booking aggregates
+        $newAmountPaid = (float)$booking->amount_paid + $amount;
+        $statusText = 'installments';
+        if ($booking->payments()->where('status', 'paid')->count() === 0 && $newAmountPaid < (float)$booking->total_amount) {
+            $statusText = 'deposit';
+        }
+        if ($newAmountPaid >= (float)$booking->total_amount - 0.005) {
+            $statusText = 'full';
+        }
+
+        $updates = [
+            'amount_paid' => min($newAmountPaid, (float)$booking->total_amount),
+            'payment_status' => $statusText,
+        ];
+        if ($statusText === 'full') {
+            $updates['status'] = 'paid';
+            $updates['paid_at'] = $booking->paid_at ?: now();
+        } else {
+            if ($booking->status !== 'paid') {
+                $updates['status'] = 'partially_paid';
+            }
+        }
+        $booking->update($updates);
+
+        return redirect()->route('admin.payments')->with('success', 'Manual payment recorded (BK'.$booking->id.', '.number_format($amount, 2).').');
+    }
+}

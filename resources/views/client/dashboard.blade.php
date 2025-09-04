@@ -46,12 +46,18 @@
                             $parts[] = 'Balance: ' . number_format($balance, 2) . ' ' . $currency . '. Checkout: ' . $checkoutUrl;
                         }
                         $clientMsg = rawurlencode(implode("\n", $parts));
+                        $waDigits = $companyWhats ? \App\Helpers\Phone::toE164Digits($companyWhats) : null;
+                        $waValid = $waDigits && preg_match('/^[1-9]\d{7,14}$/', $waDigits);
                     @endphp
-                    @if(!empty($companyWhats))
-                        <a href="https://wa.me/{{ preg_replace('/[^\d]/','',$companyWhats) }}?text={{ $clientMsg }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg border border-emerald-600 px-4 py-2 text-emerald-700 hover:bg-emerald-50">
+                    @if($waValid)
+                        <a href="https://wa.me/{{ $waDigits }}?text={{ $clientMsg }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg border border-emerald-600 px-4 py-2 text-emerald-700 hover:bg-emerald-50" title="WhatsApp: {{ $waDigits }}">
                             WhatsApp Support
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.52 3.48A11.94 11.94 0 0012 0C5.38 0 0 5.38 0 12c0 2.11.55 4.11 1.6 5.9L0 24l6.27-1.64A11.95 11.95 0 0012 24c6.62 0 12-5.38 12-12 0-3.2-1.25-6.22-3.48-8.52zM12 22.05c-1.94 0-3.82-.51-5.47-1.49l-.39-.23-3.72.97.99-3.63-.25-.37A9.96 9.96 0 012.05 12 9.95 9.95 0 1122.05 12 10.05 10.05 0 0112 22.05zm5.47-7.48c-.3-.15-1.79-.88-2.06-.98-.28-.11-.48-.15-.68.15-.2.29-.78.98-.96 1.18-.18.2-.36.22-.66.08-.3-.15-1.26-.46-2.4-1.48-.88-.78-1.47-1.74-1.64-2.03-.17-.29-.02-.45.13-.6.13-.13.3-.34.45-.51.15-.17.2-.29.3-.49.1-.2.05-.37-.02-.52-.08-.15-.68-1.64-.93-2.25-.25-.6-.5-.52-.68-.53l-.58-.01c-.2 0-.52.08-.79.37-.27.29-1.04 1.02-1.04 2.49 0 1.46 1.07 2.88 1.22 3.08.15.2 2.1 3.2 5.09 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.79-.73 2.05-1.43.25-.7.25-1.3.18-1.43-.07-.13-.26-.2-.56-.35z"/></svg>
                         </a>
+                    @else
+                        <span class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-gray-500" title="Invalid company WhatsApp number">
+                            WhatsApp Support
+                        </span>
                     @endif
                 </div>
             </div>

@@ -92,6 +92,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/payments/reminders', [\App\Http\Controllers\AdminPaymentController::class, 'sendReminders'])->name('payments.reminders');
         Route::get('/payments/export/csv', [\App\Http\Controllers\AdminPaymentController::class, 'exportCsv'])->name('payments.export.csv');
         Route::get('/payments/export/pdf', [\App\Http\Controllers\AdminPaymentController::class, 'exportPdf'])->name('payments.export.pdf');
+
+        // Admin manual payment recording / mark as paid
+        Route::get('/bookings/{booking}/manual-payment', [\App\Http\Controllers\AdminPaymentController::class, 'manualPaymentForm'])->name('bookings.manualPayment');
+        Route::post('/bookings/{booking}/manual-payment', [\App\Http\Controllers\AdminPaymentController::class, 'manualPayment'])->name('bookings.manualPayment.store');
         // Settings
         Route::get('/settings', [\App\Http\Controllers\AdminSettingsController::class, 'index'])->name('settings');
         Route::post('/settings', [\App\Http\Controllers\AdminSettingsController::class, 'update'])->name('settings.update');
