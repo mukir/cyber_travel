@@ -10,6 +10,23 @@
       @endif
 
       <div class="bg-white shadow sm:rounded-lg p-6">
+        <h3 class="text-lg font-semibold">Company</h3>
+        <form action="{{ route('admin.settings.update') }}" method="POST" class="mt-4 grid gap-4">
+          @csrf
+          <input type="hidden" name="default_currency" value="{{ old('default_currency', $defaultCurrency) }}" />
+          <div>
+            <label class="block text-sm text-gray-700">Company WhatsApp Number (E.164)</label>
+            <input type="text" name="company.whatsapp_number" value="{{ old('company.whatsapp_number', $company['whatsapp_number'] ?? '') }}" class="mt-1 w-full rounded border p-2" placeholder="2547XXXXXXXX" />
+            @error('company.whatsapp_number')
+              <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+            @enderror
+            <p class="mt-1 text-xs text-gray-500">Used for client WhatsApp support links.</p>
+          </div>
+          <div>
+            <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Save Settings</button>
+          </div>
+        </form>
+
         <h3 class="text-lg font-semibold">General</h3>
         <form action="{{ route('admin.settings.update') }}" method="POST" class="mt-4 grid gap-4">
           @csrf

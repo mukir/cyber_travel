@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NewEnquiryMail;
+use App\Models\SupportTicket;
 
 class ClientController extends Controller
 {
@@ -97,6 +98,74 @@ class ClientController extends Controller
         ));
     }
 
+    public function support()
+    {
+        return view('client.support');
+    }
+
+    public function storeSupport(Request $request)
+    {
+        $data = $request->validate([
+            'subject' => 'required|string|max:200',
+            'category' => 'nullable|string|max:100',
+            'message' => 'required|string|max:5000',
+            'priority' => 'nullable|in:low,normal,high,urgent',
+        ]);
+
+        $user = Auth::user();
+
+        // Generate a simple human-friendly reference like ST-20250904-ABCDE
+        $ref = 'ST-'.now()->format('Ymd').'-'.strtoupper(str()->random(5));
+
+        $ticket = SupportTicket::create([
+            'user_id' => $user->id,
+            'reference' => $ref,
+            'subject' => $data['subject'],
+            'category' => $data['category'] ?? null,
+            'message' => $data['message'],
+            'status' => 'open',
+            'priority' => $data['priority'] ?? 'normal',
+        ]);
+
+        // Optionally notify support email (best-effort). Uses SUPPORT_EMAIL or MAIL_FROM_ADDRESS.
+        $supportTo = env('SUPPORT_EMAIL', config('mail.from.address'));
+        if ($supportTo) {
+            try {
+                Mail::raw(
+                    "New Support Ticket \n\n".
+                    "Reference: {$ticket->reference}\n".
+                    "From: {$user->name} <{$user->email}>\n".
+                    "Subject: {$ticket->subject}\n".
+                    ($ticket->category ? ("Category: {$ticket->category}\n") : '').
+                    "Priority: {$ticket->priority}\n\n".
+                    "Message:\n{$ticket->message}\n",
+                    function ($m) use ($supportTo, $ticket) {
+                        $m->to($supportTo)->subject('[Support] '.$ticket->reference.' - '.$ticket->subject);
+                    }
+                );
+            } catch (\Throwable $e) {
+                // ignore email failures
+            }
+        }
+
+        return redirect()->route('client.dashboard')
+            ->with('success', 'Support request sent. Your ticket reference is '.$ticket->reference.'.');
+    }
+
+    public function supportTickets(Request $request)
+    {
+        $tickets = SupportTicket::where('user_id', Auth::id())
+            ->latest()
+            ->paginate(10);
+        return view('client.support_index', compact('tickets'));
+    }
+
+    public function showSupportTicket(SupportTicket $ticket)
+    {
+        abort_unless((int)$ticket->user_id === (int)Auth::id(), 403);
+        return view('client.support_show', compact('ticket'));
+    }
+
     public function editBiodata()
     {
         $profile = ClientProfile::firstOrNew(['user_id' => Auth::id()]);
@@ -142,6 +211,13 @@ class ClientController extends Controller
             'interview_date' => 'nullable|date',
             'travel_date' => 'nullable|date',
         ]);
+
+        // Normalize phone to WhatsApp-friendly digits (e.g., 07.. -> 2547..)
+        if (!empty($data['phone'])) {
+            $normalized = \App\Helpers\Phone::toE164Digits($data['phone']);
+            // Only replace if we can normalize; otherwise keep original so user can fix later
+            $data['phone'] = $normalized ?? $data['phone'];
+        }
 
         $data['user_id'] = Auth::id();
         ClientProfile::updateOrCreate(['user_id' => Auth::id()], $data);

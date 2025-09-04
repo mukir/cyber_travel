@@ -38,8 +38,11 @@ class AdminSettingsController extends Controller
             'client_secret' => SettingsHelper::get('paypal.client_secret', env('PAYPAL_CLIENT_SECRET')),
             'base_url'      => SettingsHelper::get('paypal.base_url', env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com')),
         ];
+        $company = [
+            'whatsapp_number' => SettingsHelper::get('company.whatsapp_number', ''),
+        ];
 
-        return view('admin.settings', compact('defaultCurrency', 'currencies', 'safaricom', 'paypal'));
+        return view('admin.settings', compact('defaultCurrency', 'currencies', 'safaricom', 'paypal', 'company'));
     }
 
     public function update(Request $request)
@@ -66,6 +69,8 @@ class AdminSettingsController extends Controller
             'paypal.client_id'     => ['nullable', 'string'],
             'paypal.client_secret' => ['nullable', 'string'],
             'paypal.base_url'      => ['nullable', 'url'],
+            // Company
+            'company.whatsapp_number' => ['nullable', 'string', 'max:30'],
         ]);
 
         SettingsHelper::set('default_currency', strtoupper(trim($data['default_currency'])));
