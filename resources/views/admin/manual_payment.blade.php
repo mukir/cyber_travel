@@ -43,7 +43,7 @@
           </div>
         </dl>
 
-        <form action="{{ route('admin.bookings.manualPayment.store', $booking) }}" method="POST" class="mt-6 grid gap-4">
+        <form action="{{ route('admin.applications.manualPayment.store', $booking) }}" method="POST" class="mt-6 grid gap-4">
           @csrf
           <div>
             <label class="block text-sm text-gray-700">Method</label>
@@ -91,4 +91,3 @@
     </div>
   </div>
 </x-app-layout>
-

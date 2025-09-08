@@ -37,10 +37,43 @@
                 <option value="{{ $c }}" @selected(old('default_currency', $defaultCurrency) === $c)>{{ $c }}</option>
               @endforeach
             </select>
-            <p class="mt-1 text-xs text-gray-500">Used when creating new bookings. Default is KES.</p>
+            <p class="mt-1 text-xs text-gray-500">Used when creating new applications. Default is KES.</p>
             @error('default_currency')
               <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
             @enderror
+          </div>
+
+          <div>
+            <label class="block text-sm text-gray-700">Payment Plan (must total 100%)</label>
+            <div class="mt-2 grid sm:grid-cols-3 gap-3">
+              <div>
+                <span class="text-xs text-gray-600">Deposit %</span>
+                <input type="number" name="payment.plan.deposit_percent" min="0" max="100" step="0.01" value="{{ old('payment.plan.deposit_percent', $paymentPlan['deposit_percent'] ?? 50) }}" class="mt-1 w-full rounded border p-2" />
+                @error('payment.plan.deposit_percent')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+              </div>
+              <div>
+                <span class="text-xs text-gray-600">Second %</span>
+                <input type="number" name="payment.plan.second_percent" min="0" max="100" step="0.01" value="{{ old('payment.plan.second_percent', $paymentPlan['second_percent'] ?? 25) }}" class="mt-1 w-full rounded border p-2" />
+                @error('payment.plan.second_percent')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+              </div>
+              <div>
+                <span class="text-xs text-gray-600">Final %</span>
+                <input type="number" name="payment.plan.final_percent" min="0" max="100" step="0.01" value="{{ old('payment.plan.final_percent', $paymentPlan['final_percent'] ?? 25) }}" class="mt-1 w-full rounded border p-2" />
+                @error('payment.plan.final_percent')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+              </div>
+            </div>
+            @if(session('error'))
+              <div class="text-xs text-red-600 mt-1">{{ session('error') }}</div>
+            @endif
+          </div>
+
+          <div>
+            <label class="block text-sm text-gray-700">USD → KES Rate</label>
+            <input type="number" step="0.01" min="1" name="currency.usd_to_kes" value="{{ old('currency.usd_to_kes', $usdToKes ?? 135) }}" class="mt-1 w-40 rounded border p-2" />
+            @error('currency.usd_to_kes')
+              <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+            @enderror
+            <p class="mt-1 text-xs text-gray-500">Used to convert USD amounts when charging via M-PESA.</p>
           </div>
 
           <h3 class="text-lg font-semibold mt-4">Safaricom Daraja</h3>

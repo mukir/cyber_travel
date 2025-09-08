@@ -38,7 +38,7 @@
                         $balance = $latestBooking ? max(((float)$latestBooking->total_amount) - ((float)$latestBooking->amount_paid), 0) : null;
                         $currency = $latestBooking?->currency ?? \App\Helpers\Settings::get('default_currency', config('app.currency', env('APP_CURRENCY', 'KES')));
                         $pendingText = $missingDocs->isNotEmpty() ? $missingDocs->implode(', ') : 'none';
-                        $checkoutUrl = $latestBooking ? route('client.bookings.checkout', $latestBooking) : route('jobs.index');
+                        $checkoutUrl = $latestBooking ? route('client.applications.checkout', $latestBooking) : route('jobs.index');
                         $parts = [];
                         $parts[] = "Hi, this is {$firstName}. I need assistance" . ($jobName || $pkgName ? " for my {$jobName}" . ($pkgName ? " – {$pkgName}" : '') : '') . '.';
                         $parts[] = 'Pending: ' . $pendingText . '.';
@@ -155,14 +155,14 @@
                         </dl>
                         <div class="mt-4 flex items-center justify-between">
                             @if($latestBooking->status === 'pending')
-                                <form action="{{ route('client.bookings.pay', $latestBooking) }}" method="POST" class="flex items-center gap-2">
+                                <form action="{{ route('client.applications.pay', $latestBooking) }}" method="POST" class="flex items-center gap-2">
                                     @csrf
                                     <input type="tel" name="phone" value="{{ old('phone', $profile->phone ?? $latestBooking->customer_phone) }}" placeholder="07XXXXXXXX" class="w-40 rounded border p-1 text-sm" required />
                                     <input type="number" step="0.01" min="1" max="{{ max($latestBooking->total_amount - $latestBooking->amount_paid, 0) }}" name="amount" value="{{ number_format(max($latestBooking->total_amount - $latestBooking->amount_paid, 0), 2, '.', '') }}" class="w-28 rounded border p-1 text-sm" />
                                     <button class="rounded bg-emerald-600 px-3 py-1.5 text-white text-sm hover:bg-emerald-700">M-PESA</button>
                                 </form>
                                 @if($latestBooking->mpesa_checkout_id)
-                                    <form action="{{ route('client.bookings.verify', $latestBooking) }}" method="POST">
+                                    <form action="{{ route('client.applications.verify', $latestBooking) }}" method="POST">
                                         @csrf
                                         <button class="ml-3 text-xs text-gray-600 hover:underline">Verify payment</button>
                                     </form>
@@ -170,13 +170,13 @@
                             @endif
                             <div class="ml-auto space-x-4">
                               @if($latestBooking->status === 'pending')
-                                <a href="{{ route('client.bookings.checkout', $latestBooking) }}" class="text-sm text-emerald-700 hover:underline">Go to Checkout</a>
+                                <a href="{{ route('client.applications.checkout', $latestBooking) }}" class="text-sm text-emerald-700 hover:underline">Go to Checkout</a>
                               @endif
-                              <a href="{{ route('client.bookings') }}" class="text-sm text-emerald-700 hover:underline">View all bookings</a>
+                              <a href="{{ route('client.applications') }}" class="text-sm text-emerald-700 hover:underline">View all applications</a>
                             </div>
                         </div>
                     @else
-                        <p class="mt-2 text-sm text-gray-600">No bookings yet. <a class="text-emerald-700 hover:underline" href="{{ route('jobs.index') }}">Book a package</a>.</p>
+                        <p class="mt-2 text-sm text-gray-600">No applications yet. <a class="text-emerald-700 hover:underline" href="{{ route('jobs.index') }}">Book a package</a>.</p>
                     @endif
                 </div>
             </div>

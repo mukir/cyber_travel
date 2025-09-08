@@ -1,6 +1,6 @@
 <x-app-layout>
   <x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">Job Details</h2>
+    <h2 class="font-semibold text-xl text-gray-800 leading-tight">Service Details</h2>
   </x-slot>
 
   <div class="py-8">
@@ -9,16 +9,23 @@
       <div class="mb-4 rounded bg-emerald-100 text-emerald-800 px-4 py-3">{{ session('success') }}</div>
     @endif
 
-    <a href="{{ route('jobs.index') }}" class="text-sm text-emerald-700 hover:underline">&larr; All jobs</a>
+    <a href="{{ route('services.index') }}" class="text-sm text-emerald-700 hover:underline">&larr; All services</a>
 
     <h1 class="mt-2 text-2xl font-bold">{{ $job->name }}</h1>
+    @if(method_exists($job, 'categories') && $job->categories()->exists())
+      <div class="mt-2">
+        @foreach($job->categories as $cat)
+          <a href="{{ route('services.index', ['category' => $cat->slug]) }}" class="inline-block px-2 py-0.5 mr-1 mb-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">{{ $cat->name }}</a>
+        @endforeach
+      </div>
+    @endif
     @if($job->description)
       <p class="mt-2 text-slate-700">{{ $job->description }}</p>
     @endif
 
     <div class="mt-6">
       <h2 class="text-lg font-semibold">Instant Booking</h2>
-      <form action="{{ route('bookings.store') }}" method="POST" class="mt-4 space-y-4" id="booking-form" data-currency="{{ env('APP_CURRENCY','KES') }}">
+      <form action="{{ route('applications.store') }}" method="POST" class="mt-4 space-y-4" id="booking-form" data-currency="{{ env('APP_CURRENCY','KES') }}">
         @csrf
         <input type="hidden" name="job_id" value="{{ $job->id }}" />
 

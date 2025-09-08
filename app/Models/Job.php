@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Job extends Model
 {
@@ -20,5 +21,10 @@ class Job extends Model
     public function packages(): HasMany
     {
         return $this->hasMany(JobPackage::class);
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(ServiceCategory::class, 'service_category_job', 'job_id', 'service_category_id');
     }
 }

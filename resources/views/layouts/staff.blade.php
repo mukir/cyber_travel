@@ -6,6 +6,10 @@
                     <x-nav-link :href="route('staff.leads')" :active="request()->routeIs('staff.leads')">
                         {{ __('Leads') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('staff.clients')" :active="request()->routeIs('staff.clients')">
+                        {{ __('My Clients') }}
+                    </x-nav-link>
               
               
                     <x-nav-link :href="route('staff.commissions')" :active="request()->routeIs('staff.commissions')">
@@ -25,4 +29,3 @@
                         {{ __('Referrals') }}
                     </x-nav-link>
                     @endif
-

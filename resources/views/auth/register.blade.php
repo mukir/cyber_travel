@@ -22,6 +22,13 @@
                 <x-input-error :messages="$errors->get('name')" class="mt-2" />
             </div>
 
+            <!-- Phone (required) -->
+            <div class="mt-4">
+                <x-input-label for="phone" :value="__('Phone (WhatsApp)')" />
+                <x-text-input id="phone" class="block mt-1 w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:outline-none" type="tel" name="phone" :value="old('phone')" autocomplete="tel" placeholder="07XXXXXXXX or 2547XXXXXXXX" required />
+                <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+            </div>
+
             <!-- Email Address -->
             <div class="mt-4">
                 <x-input-label for="email" :value="__('Email Address')" />

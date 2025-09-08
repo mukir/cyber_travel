@@ -13,7 +13,7 @@
       @endif
 
       <div class="bg-white p-6 shadow sm:rounded-lg">
-        <h3 class="text-lg font-semibold mb-4">Job Details</h3>
+        <h3 class="text-lg font-semibold mb-4">Service Details</h3>
         <form method="POST" action="{{ route('admin.jobs.update', $job) }}" class="space-y-4">
           @csrf
           @method('PUT')
@@ -40,6 +40,19 @@
             <label class="block text-sm font-medium">Description</label>
             <textarea name="description" rows="4" class="mt-1 w-full rounded border p-2">{{ old('description', $job->description) }}</textarea>
             @error('description') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium">Categories</label>
+            <div class="mt-2 flex flex-wrap gap-3">
+              @foreach(($categories ?? []) as $cat)
+                @php($checked = $job->categories->contains('id', $cat->id))
+                <label class="inline-flex items-center gap-2">
+                  <input type="checkbox" name="categories[]" value="{{ $cat->id }}" class="rounded border" @checked($checked) />
+                  <span class="text-sm">{{ $cat->name }}</span>
+                </label>
+              @endforeach
+            </div>
           </div>
 
           <div class="flex items-center gap-2">
@@ -132,4 +145,3 @@
     </div>
   </div>
 </x-app-layout>
-

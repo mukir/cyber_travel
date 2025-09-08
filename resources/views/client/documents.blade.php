@@ -13,7 +13,7 @@
       @endif
 
       @php(
-        $required = collect(['passport','good_conduct','cv','photo'])
+        $required = isset($requiredKeys) ? collect($requiredKeys) : collect([])
       )
       @php(
         $uploadedTypes = $documents->pluck('type')->map(fn($t)=> strtolower((string)$t))->unique()
@@ -40,7 +40,7 @@
               @else
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7.707 7.707a1 1 0 10-1.414-1.414L10 5.586l3.707 3.707a1 1 0 11-1.414 1.414L10 8.414l-2.293 2.293z" clip-rule="evenodd"/></svg>
               @endif
-              <span class="text-sm capitalize">{{ str_replace('_',' ', $req) }}</span>
+              <span class="text-sm capitalize">{{ optional(($typesByKey ?? collect())->get($req))->name ?? str_replace('_',' ', $req) }}</span>
             </div>
           @endforeach
         </div>
@@ -54,11 +54,23 @@
           <div class="md:col-span-2">
             <label class="block text-sm text-gray-700">Document Type</label>
             <select name="type" class="mt-1 w-full rounded border p-2 focus:border-emerald-500 focus:ring-emerald-500" required>
-              <option value="passport">Passport</option>
-              <option value="good_conduct">Good Conduct</option>
-              <option value="cv">CV/Academic certs</option>
-              <option value="photo">Passport Size Photo</option>
-              <option value="other">Other</option>
+              <option value="" disabled selected>Select document type</option>
+              @php($reqTypes = ($types ?? collect())->where('required', true))
+              @php($optTypes = ($types ?? collect())->where('required', false))
+              @if($reqTypes->isNotEmpty())
+                <optgroup label="Required">
+                  @foreach($reqTypes as $t)
+                    <option value="{{ $t->key }}">{{ $t->name }} (Required)</option>
+                  @endforeach
+                </optgroup>
+              @endif
+              @if($optTypes->isNotEmpty())
+                <optgroup label="Optional">
+                  @foreach($optTypes as $t)
+                    <option value="{{ $t->key }}">{{ $t->name }}</option>
+                  @endforeach
+                </optgroup>
+              @endif
             </select>
           </div>
           <div class="md:col-span-2">
@@ -82,7 +94,7 @@
         @else
           <div class="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($documents as $doc)
-              @php($label = ucfirst(str_replace('_',' ', $doc->type)))
+              @php($label = optional(($typesByKey ?? collect())->get($doc->type))->name ?? ucfirst(str_replace('_',' ', $doc->type)))
               <div class="rounded border p-4">
                 <div class="flex items-start justify-between">
                   <div>
@@ -97,7 +109,7 @@
                   <p class="mt-2 text-sm text-gray-700"><span class="font-medium">Note:</span> {{ $doc->note }}</p>
                 @endif
                 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                  <a href="{{ Storage::url($doc->path) }}" target="_blank" class="text-emerald-700 hover:underline">View</a>
+                  <a href="{{ route('client.documents.view', $doc) }}" target="_blank" class="text-emerald-700 hover:underline">View</a>
                   <form action="{{ route('client.documents.replace', $doc) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
                     @csrf
                     <input type="file" name="file" accept="application/pdf,image/*" required class="text-xs" />

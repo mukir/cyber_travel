@@ -8,22 +8,46 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="flex justify-end mb-4">
+                <div class="flex items-center justify-between mb-4">
+                    <form method="GET" action="{{ route('admin.clients') }}" class="flex items-center gap-2">
+                        <label class="text-sm text-gray-700">Filter by Staff:</label>
+                        <select name="rep" class="rounded border p-1 text-sm" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            <option value="unassigned" {{ (isset($selectedRep) && $selectedRep==='unassigned') ? 'selected' : '' }}>Unassigned</option>
+                            @foreach(($staff ?? []) as $rep)
+                                <option value="{{ $rep->id }}" {{ (isset($selectedRep) && (string)$selectedRep===(string)$rep->id) ? 'selected' : '' }}>{{ $rep->name }}</option>
+                            @endforeach
+                        </select>
+                    </form>
                     <a href="{{ route('admin.clients.create') }}" class="bg-blue-500 text-white px-4 py-2 rounded">Add Client</a>
                 </div>
 
+                <form method="POST" action="{{ route('admin.clients.assign') }}" class="space-y-3">
+                    @csrf
+                    <div class="flex items-center gap-2 mb-2">
+                        <label class="text-sm text-gray-700">Assign selected to:</label>
+                        <select name="assign_to" class="rounded border p-1 text-sm" required>
+                            @foreach(($staff ?? []) as $rep)
+                                <option value="{{ $rep->id }}">{{ $rep->name }}</option>
+                            @endforeach
+                        </select>
+                        <button class="rounded bg-emerald-600 px-3 py-1.5 text-white text-sm">Assign</button>
+                    </div>
                 <table class="w-full table-auto">
                     <thead>
                         <tr class="bg-gray-100">
+                            <th class="px-4 py-2 text-left"><input type="checkbox" id="select-all"></th>
                             <th class="px-4 py-2 text-left">Name</th>
                             <th class="px-4 py-2 text-left">Email</th>
                             <th class="px-4 py-2 text-left">Phone</th>
+                            <th class="px-4 py-2 text-left">Assigned To</th>
                             <th class="px-4 py-2">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($clients as $client)
                             <tr class="border-t align-top">
+                                <td class="px-4 py-2"><input type="checkbox" name="client_ids[]" value="{{ $client->id }}" class="row-check"></td>
                                 <td class="px-4 py-2">{{ $client->name }}</td>
                                 <td class="px-4 py-2">{{ $client->email }}</td>
                                 <td class="px-4 py-2">
@@ -32,6 +56,7 @@
                                     @endphp
                                     {{ $profile?->phone ?: '—' }}
                                 </td>
+                                <td class="px-4 py-2">{{ optional(\App\Models\User::find($profile?->sales_rep_id))->name ?: '—' }}</td>
                                 <td class="px-4 py-2 space-x-3 whitespace-nowrap">
                                     <a href="{{ route('admin.clients.edit', $client) }}" class="text-blue-600 hover:underline">Edit</a>
                                     <a href="{{ route('admin.clients.documents', $client) }}" class="text-green-600 hover:underline">Documents</a>
@@ -46,10 +71,10 @@
                                         $balance = $latest ? max(((float)$latest->total_amount) - ((float)$latest->amount_paid), 0) : null;
                                         $currency = $latest?->currency ?? \App\Helpers\Settings::get('default_currency', config('app.currency', env('APP_CURRENCY', 'KES')));
                                         $docs = \App\Models\ClientDocument::where('user_id', $client->id)->pluck('type')->all();
-                                        $required = ['passport','good_conduct','cv','photo'];
+                                        $required = \App\Models\DocumentType::where('active', true)->where('required', true)->pluck('key')->all();
                                         $missing = array_values(array_diff($required, $docs));
                                         $pendingText = empty($missing) ? 'none' : implode(', ', $missing);
-                                        $checkoutUrl = $latest ? route('client.bookings.checkout', $latest) : route('jobs.index');
+                                        $checkoutUrl = $latest ? route('client.applications.checkout', $latest) : route('jobs.index');
 
                                         $title = ($jobName || $pkgName)
                                             ? trim(($jobName ?: 'package') . ($pkgName ? (' - ' . $pkgName) : ''))
@@ -76,7 +101,7 @@
                                         <span class="text-gray-400" title="{{ empty($to) ? 'No phone on profile' : 'Invalid phone for WhatsApp' }}">WhatsApp</span>
                                     @endif
                                     @if($latest && $balance > 0.01)
-                                        <a href="{{ route('admin.bookings.manualPayment', $latest) }}" class="text-amber-700 hover:underline">Record Payment</a>
+                                        <a href="{{ route('admin.applications.manualPayment', $latest) }}" class="text-amber-700 hover:underline">Record Payment</a>
                                     @endif
                                     <form action="{{ route('admin.clients.destroy', $client) }}" method="POST" class="inline" onsubmit="return confirm('Delete client?');">
                                         @csrf
@@ -87,11 +112,17 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-2">No clients found.</td>
+                                <td colspan="5" class="px-4 py-2">No clients found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
+                </form>
+                <script>
+                  document.getElementById('select-all')?.addEventListener('change', function(){
+                    document.querySelectorAll('.row-check').forEach(cb => { cb.checked = this.checked; });
+                  });
+                </script>
             </div>
         </div>
     </div>

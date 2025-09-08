@@ -2,7 +2,7 @@
   <x-slot name="header">
     <div class="flex items-center justify-between">
       <h2 class="font-semibold text-xl text-gray-800 leading-tight">Checkout</h2>
-      <a href="{{ route('client.bookings') }}" class="text-sm text-emerald-700 hover:underline">&larr; My Bookings</a>
+      <a href="{{ route('client.applications') }}" class="text-sm text-emerald-700 hover:underline">&larr; My Applications</a>
     </div>
   </x-slot>
 
@@ -19,6 +19,36 @@
 
       <div class="md:col-span-2 bg-white shadow sm:rounded-lg p-6 space-y-6">
         <div>
+          <h3 class="text-lg font-semibold">Payment Plan</h3>
+          @php($total = (float)$booking->total_amount)
+          @php($paid = (float)$booking->amount_paid)
+          @php($remaining = max($total - $paid, 0))
+          @php($dp = (float)\App\Helpers\Settings::get('payment.plan.deposit_percent', 50))
+          @php($sp = (float)\App\Helpers\Settings::get('payment.plan.second_percent', 25))
+          @php($fp = (float)\App\Helpers\Settings::get('payment.plan.final_percent', 25))
+          @php($c1 = round($total * max($dp,0) / 100, 2))
+          @php($c2 = round($total * max($dp+$sp,0) / 100, 2))
+          @php($minDue = $paid + 0.01 < $c1 ? max($c1 - $paid, 0) : ($paid + 0.01 < $c2 ? max($c2 - $paid, 0) : max($remaining, 0)))
+          @php($stage = $paid + 0.01 < $c1 ? 'deposit' : ($paid + 0.01 < $c2 ? 'second' : 'final'))
+          @php($depositDue = max(round($total*0.5,2) - $paid, 0))
+          @php($secondDue = max(round($total*0.75,2) - $paid, 0))
+          <div class="mt-2 text-sm text-gray-700">
+            <div>Deposit: {{ (int)$dp }}% ({{ number_format($total*($dp/100), 2) }} {{ $booking->currency }})</div>
+            <div>Second: {{ (int)$sp }}% ({{ number_format($total*($sp/100), 2) }} {{ $booking->currency }})</div>
+            <div>Final: {{ (int)$fp }}% ({{ number_format($total*($fp/100), 2) }} {{ $booking->currency }})</div>
+          </div>
+          @if(in_array($booking->currency, ['KES','USD']))
+          <div class="mt-2 flex flex-wrap gap-2">
+            @if($paid + 0.01 < $c1)
+              <button type="button" class="js-plan-amount rounded border px-3 py-1.5 text-sm border-emerald-300 text-emerald-800 bg-emerald-50" data-amount="{{ number_format(min($c1 - $paid,$remaining), 2, '.', '') }}">Pay {{ (int)$dp }}% @if($stage==='deposit')(Recommended)@endif</button>
+            @elseif($paid + 0.01 < $c2)
+              <button type="button" class="js-plan-amount rounded border px-3 py-1.5 text-sm border-sky-300 text-sky-800 bg-sky-50" data-amount="{{ number_format(min($c2 - $paid,$remaining), 2, '.', '') }}">Pay {{ (int)$sp }}% @if($stage==='second')(Recommended)@endif</button>
+            @endif
+            <button type="button" class="js-plan-amount rounded border px-3 py-1.5 text-sm border-violet-300 text-violet-800 bg-violet-50" data-amount="{{ number_format($remaining, 2, '.', '') }}">Pay Balance @if($stage==='final')(Recommended)@endif</button>
+          </div>
+          <p class="mt-2 text-xs text-slate-600">Minimum due now: <span class="font-semibold">{{ number_format($minDue, 2) }} {{ $booking->currency }}</span></p>
+          @endif
+        </div>
           <h3 class="text-lg font-semibold">Order Summary</h3>
           <dl class="mt-4 grid grid-cols-2 gap-2 text-sm">
             <dt class="text-gray-600">Reference</dt>
@@ -39,25 +69,32 @@
           </dl>
 
           <div class="mt-4 flex items-center gap-3 text-sm">
-            <a class="text-emerald-700 hover:underline" href="{{ route('client.bookings.invoice', $booking) }}">Download Invoice</a>
+            <a class="text-emerald-700 hover:underline" href="{{ route('client.applications.invoice', $booking) }}">Download Invoice</a>
             <span id="receipt-divider" class="text-gray-300 {{ $booking->amount_paid > 0 ? '' : 'hidden' }}">|</span>
-            <a id="receipt-link" class="text-emerald-700 hover:underline {{ $booking->amount_paid > 0 ? '' : 'hidden' }}" href="{{ route('client.bookings.receipt', $booking) }}">Download Receipt</a>
+            <a id="receipt-link" class="text-emerald-700 hover:underline {{ $booking->amount_paid > 0 ? '' : 'hidden' }}" href="{{ route('client.applications.receipt', $booking) }}">Download Receipt</a>
           </div>
         </div>
 
         <div>
-          @if($booking->currency === 'KES')
+          @if(in_array($booking->currency, ['KES','USD']))
           <h3 class="text-lg font-semibold">Pay with M-PESA</h3>
-          <form id="form-stk" action="{{ route('client.bookings.pay', $booking) }}" method="POST" class="mt-3 grid sm:grid-cols-3 gap-3 items-end">
+          <form id="form-stk" action="{{ route('client.applications.pay', $booking) }}" method="POST" class="mt-3 grid sm:grid-cols-3 gap-3 items-end">
             @csrf
             <div>
               <label class="block text-sm text-gray-700">Phone (07XXXXXXXX)</label>
               <input type="tel" name="phone" value="{{ old('phone', $booking->customer_phone) }}" class="mt-1 w-full rounded border p-2" required pattern="^(?:0|\+?254)?7\d{8}$" title="Enter a valid Safaricom number e.g. 07XXXXXXXX" />
             </div>
             <div>
-              <label class="block text-sm text-gray-700">Amount</label>
               @php($disabled = $remaining < 1)
-              <input id="stk-amount" type="number" step="1" min="1" max="{{ (int)ceil($remaining) }}" name="amount" value="{{ $remaining >= 1 ? (int)ceil($remaining) : '' }}" class="mt-1 w-full rounded border p-2" {{ $disabled ? 'disabled' : '' }} />
+              @if($booking->currency === 'USD')
+                <label class="block text-sm text-gray-700">Amount (USD)</label>
+                <input id="stk-amount" type="number" step="0.01" min="1" max="{{ number_format($remaining, 2, '.', '') }}" name="amount" value="{{ $remaining >= 1 ? number_format($remaining, 2, '.', '') : '' }}" class="mt-1 w-full rounded border p-2" {{ $disabled ? 'disabled' : '' }} />
+                @php($rate = \App\Helpers\Settings::get('currency.usd_to_kes', 135))
+                <p class="mt-1 text-xs text-gray-500">Charged in KES at ~{{ number_format($rate, 2) }} KES per 1 USD. Approx charge: <span id="kes-approx">{{ number_format(($remaining >= 1 ? $remaining : 0) * (float)$rate, 2, '.', ',') }}</span> KES</p>
+              @else
+                <label class="block text-sm text-gray-700">Amount (KES)</label>
+                <input id="stk-amount" type="number" step="1" min="1" max="{{ (int)ceil($remaining) }}" name="amount" value="{{ $remaining >= 1 ? (int)ceil($remaining) : '' }}" class="mt-1 w-full rounded border p-2" {{ $disabled ? 'disabled' : '' }} />
+              @endif
               @if($disabled)
                 <p class="mt-1 text-xs text-gray-500">No outstanding balance to pay.</p>
               @endif
@@ -67,7 +104,7 @@
             </div>
           </form>
           @if($booking->mpesa_checkout_id)
-            <form action="{{ route('client.bookings.verify', $booking) }}" method="POST" class="mt-2">
+            <form action="{{ route('client.applications.verify', $booking) }}" method="POST" class="mt-2">
               @csrf
               <button id="btn-verify" class="text-sm text-gray-600 hover:underline">Verify latest M-PESA payment</button>
             </form>
@@ -119,7 +156,7 @@
                 amount: amountInput.value,
                 details
               };
-              const res = await fetch('{{ route('client.bookings.paypalComplete', $booking) }}', {
+            const res = await fetch('{{ route('client.applications.paypalComplete', $booking) }}', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -270,6 +307,31 @@
 
       // Intercept STK form submit to initiate via fetch JSON
       if (formStk) {
+        // Live approx KES preview for USD
+        try {
+          const rateEl = document.getElementById('kes-approx');
+          const amtEl = document.getElementById('stk-amount');
+          const rateVal = Number({{ (float)(\App\Helpers\Settings::get('currency.usd_to_kes', 135)) }});
+          if (rateEl && amtEl && !isNaN(rateVal)) {
+            const updateKes = () => {
+              const usd = Number(amtEl.value || 0);
+              const kes = Math.max(usd * rateVal, 0);
+              rateEl.textContent = kes.toFixed(2);
+            };
+            amtEl.addEventListener('input', updateKes);
+            updateKes();
+          }
+        } catch (_) {}
+        // Quick-fill plan buttons
+        document.querySelectorAll('.js-plan-amount').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const amt = btn.getAttribute('data-amount');
+            const stk = document.getElementById('stk-amount');
+            if (stk && amt) stk.value = amt;
+            const pp = document.getElementById('pp-amount');
+            if (pp && amt) pp.value = amt;
+          });
+        });
         formStk.addEventListener('submit', async function (e) {
           e.preventDefault();
           const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');

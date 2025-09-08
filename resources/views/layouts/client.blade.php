@@ -9,11 +9,11 @@
                     <x-nav-link :href="route('client.documents')" :active="request()->routeIs('client.documents')">
                         {{ __('Documents') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('client.bookings')" :active="request()->routeIs('client.bookings')">
-                        {{ __('My Bookings') }}
+                    <x-nav-link :href="route('client.applications')" :active="request()->routeIs('client.applications')">
+                        {{ __('My Applications') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')">
-                        {{ __('Apply for Job') }}
+                    <x-nav-link :href="route('services.index')" :active="request()->routeIs('services.*')">
+                        {{ __('Explore Services') }}
                     </x-nav-link>
                     <x-nav-link :href="route('client.enquiry')" :active="request()->routeIs('client.enquiry')">
                         {{ __('Service Enquiry') }}

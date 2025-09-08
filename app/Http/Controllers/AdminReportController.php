@@ -58,7 +58,7 @@ class AdminReportController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.bookings_report', [
             'rows' => $rows,
-            'title' => ucfirst($period).' Bookings Report',
+            'title' => ucfirst($period).' Applications Report',
             'period' => [$from, $to],
         ]);
         return $pdf->download('bookings_'.$period.'.pdf');
@@ -80,7 +80,7 @@ class AdminReportController extends Controller
                 ->orderBy('created_at')->get();
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.bookings_report', [
                 'rows' => $rows,
-                'title' => ucfirst($data['period']).' Bookings Report',
+                'title' => ucfirst($data['period']).' Applications Report',
                 'period' => [$from, $to],
             ]);
             $content = $pdf->output();

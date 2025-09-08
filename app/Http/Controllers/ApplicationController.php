@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\Settings;
 
-class BookingController extends Controller
+class ApplicationController extends Controller
 {
     public function store(Request $request)
     {
@@ -49,6 +49,6 @@ class BookingController extends Controller
         ]);
 
         return redirect()->route('jobs.show', $job)
-            ->with('success', 'Booking placed successfully. Reference #'.$booking->id);
+            ->with('success', 'Application submitted successfully. Reference #'.$booking->id);
     }
 }

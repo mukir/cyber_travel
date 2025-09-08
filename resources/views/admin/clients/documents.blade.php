@@ -21,7 +21,7 @@
                         @forelse($documents as $doc)
                             <tr class="border-t">
                                 <td class="px-4 py-2">{{ ucfirst(str_replace('_', ' ', $doc->type)) }}</td>
-                                <td class="px-4 py-2"><a href="{{ Storage::url($doc->path) }}" target="_blank" class="text-blue-500">View</a></td>
+                                <td class="px-4 py-2"><a href="{{ route('admin.clients.documents.view', [$client, $doc]) }}" target="_blank" class="text-blue-500">View</a></td>
                                 <td class="px-4 py-2">{{ $doc->validated ? 'Validated' : 'Pending' }}</td>
                                 <td class="px-4 py-2">
                                     @if(!$doc->validated)
@@ -47,4 +47,3 @@
         </div>
     </div>
 </x-app-layout>
-
