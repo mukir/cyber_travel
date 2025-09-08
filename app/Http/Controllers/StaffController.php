@@ -4,6 +4,32 @@ namespace App\Http\Controllers;
 
 class StaffController extends Controller
 {
+    public function clients()
+    {
+        $user = auth()->user();
+        $clientIds = \App\Models\ClientProfile::where('sales_rep_id', $user->id)->pluck('user_id');
+        $query = \App\Models\User::whereIn('id', $clientIds)->orderBy('name');
+        $q = trim((string) request('q'));
+        if ($q !== '') {
+            $phoneIds = \App\Models\ClientProfile::where('sales_rep_id', $user->id)
+                ->where('phone', 'like', '%' . preg_replace('/\D+/', '', $q) . '%')
+                ->pluck('user_id');
+            $query->where(function ($w) use ($q, $phoneIds) {
+                $w->where('name', 'like', '%' . $q . '%')
+                  ->orWhere('email', 'like', '%' . $q . '%')
+                  ->orWhereIn('id', $phoneIds);
+            });
+        }
+        $clients = $query->paginate(15)->withQueryString();
+        // Map phone from profile and latest booking summary
+        $profiles = \App\Models\ClientProfile::whereIn('user_id', $clients->pluck('id'))->get()->keyBy('user_id');
+        $latestBookings = \App\Models\Booking::with(['job','package'])
+            ->whereIn('user_id', $clients->pluck('id'))
+            ->select('user_id','id','total_amount','amount_paid','currency','job_id','job_package_id','created_at')
+            ->latest()->get()->groupBy('user_id');
+
+        return view('staff.clients', compact('clients','profiles','latestBookings','q'));
+    }
     public function dashboard()
     {
         $user = auth()->user();

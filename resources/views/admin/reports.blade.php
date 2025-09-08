@@ -65,24 +65,24 @@
                 <h3 class="text-lg font-semibold">Operational Reports</h3>
                 <div class="mt-3 grid sm:grid-cols-3 gap-3 text-sm">
                     <div class="p-3 rounded border">
-                        <div class="font-medium">Daily Bookings</div>
+                        <div class="font-medium">Daily Applications</div>
                         <div class="mt-2 space-x-2">
-                            <a class="underline" href="{{ route('admin.reports.bookings.csv', 'daily') }}">CSV</a>
-                            <a class="underline" href="{{ route('admin.reports.bookings.pdf', 'daily') }}">PDF</a>
+                            <a class="underline" href="{{ route('admin.reports.applications.csv', 'daily') }}">CSV</a>
+                            <a class="underline" href="{{ route('admin.reports.applications.pdf', 'daily') }}">PDF</a>
                         </div>
                     </div>
                     <div class="p-3 rounded border">
-                        <div class="font-medium">Weekly Bookings</div>
+                        <div class="font-medium">Weekly Applications</div>
                         <div class="mt-2 space-x-2">
-                            <a class="underline" href="{{ route('admin.reports.bookings.csv', 'weekly') }}">CSV</a>
-                            <a class="underline" href="{{ route('admin.reports.bookings.pdf', 'weekly') }}">PDF</a>
+                            <a class="underline" href="{{ route('admin.reports.applications.csv', 'weekly') }}">CSV</a>
+                            <a class="underline" href="{{ route('admin.reports.applications.pdf', 'weekly') }}">PDF</a>
                         </div>
                     </div>
                     <div class="p-3 rounded border">
-                        <div class="font-medium">Monthly Bookings</div>
+                        <div class="font-medium">Monthly Applications</div>
                         <div class="mt-2 space-x-2">
-                            <a class="underline" href="{{ route('admin.reports.bookings.csv', 'monthly') }}">CSV</a>
-                            <a class="underline" href="{{ route('admin.reports.bookings.pdf', 'monthly') }}">PDF</a>
+                            <a class="underline" href="{{ route('admin.reports.applications.csv', 'monthly') }}">CSV</a>
+                            <a class="underline" href="{{ route('admin.reports.applications.pdf', 'monthly') }}">PDF</a>
                         </div>
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                         <label class="block text-gray-600">Type</label>
                         <select name="type" class="mt-1 w-full rounded border p-2">
                             <option value="payments">Payments</option>
-                            <option value="bookings">Bookings</option>
+                            <option value="bookings">Applications</option>
                         </select>
                     </div>
                     <div>

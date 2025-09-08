@@ -25,7 +25,7 @@ class ClientController extends Controller
         );
 
         $documents = ClientDocument::where('user_id', Auth::id())->get();
-        $requiredDocs = collect(['passport', 'good_conduct', 'cv', 'photo']);
+        $requiredDocs = \App\Models\DocumentType::where('active', true)->where('required', true)->pluck('key');
         $missingDocs = $requiredDocs->diff($documents->pluck('type'));
 
         // Determine progress stage based on profile + bookings
@@ -178,7 +178,7 @@ class ClientController extends Controller
             return !is_null($v) && trim((string)$v) !== '';
         })->count();
 
-        $requiredDocs = collect(['passport', 'good_conduct', 'cv', 'photo']);
+        $requiredDocs = \App\Models\DocumentType::where('active', true)->where('required', true)->pluck('key');
         $uploaded = ClientDocument::where('user_id', Auth::id())->pluck('type')->map(function ($t) {
             return strtolower((string)$t);
         });
@@ -196,13 +196,16 @@ class ClientController extends Controller
 
     public function storeBiodata(Request $request)
     {
+        $profileExisting = \App\Models\ClientProfile::where('user_id', Auth::id())->first();
+        $profileId = optional($profileExisting)->id;
+
         $data = $request->validate([
             'name' => 'required|string',
             'dob' => 'nullable|date',
-            'phone' => 'nullable|string',
+            'phone' => ['nullable','string', \Illuminate\Validation\Rule::unique('client_profiles','phone')->ignore($profileId)],
             'email' => 'nullable|email',
             'gender' => 'nullable|string',
-            'id_no' => 'nullable|string',
+            'id_no' => ['nullable','string', \Illuminate\Validation\Rule::unique('client_profiles','id_no')->ignore($profileId)],
             'county' => 'nullable|string',
             'next_of_kin' => 'nullable|string',
             'service_package' => 'nullable|string',
@@ -228,19 +231,31 @@ class ClientController extends Controller
     public function documents()
     {
         $documents = ClientDocument::where('user_id', Auth::id())->get();
+        $types = \App\Models\DocumentType::where('active', true)
+            ->orderByDesc('required')
+            ->orderBy('name')
+            ->get();
+        $requiredKeys = $types->where('required', true)->pluck('key')->values();
+        $typesByKey = $types->keyBy('key');
 
-        return view('client.documents', compact('documents'));
+        return view('client.documents', [
+            'documents' => $documents,
+            'types' => $types,
+            'requiredKeys' => $requiredKeys,
+            'typesByKey' => $typesByKey,
+        ]);
     }
 
     public function uploadDocument(Request $request)
     {
+        $allowedTypes = \App\Models\DocumentType::where('active', true)->pluck('key')->all();
         $data = $request->validate([
-            'type' => 'required|string',
+            'type' => ['required', 'string', \Illuminate\Validation\Rule::in($allowedTypes)],
             'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'note' => 'nullable|string|max:500',
         ]);
 
-        $path = $request->file('file')->store('documents');
+        $path = $request->file('file')->store('documents', 'public');
 
         ClientDocument::create([
             'user_id' => Auth::id(),
@@ -253,14 +268,27 @@ class ClientController extends Controller
         return redirect()->route('client.documents')->with('success', 'Document uploaded.');
     }
 
-    public function bookings()
+    public function viewDocument(ClientDocument $document)
+    {
+        abort_unless((int)$document->user_id === (int)Auth::id(), 403);
+        $path = $document->path;
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
+        }
+        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+            return \Illuminate\Support\Facades\Storage::disk('local')->response($path);
+        }
+        abort(404);
+    }
+
+    public function applications()
     {
         $bookings = Booking::with(['job', 'package'])
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->paginate(10);
 
-        return view('client.bookings', compact('bookings'));
+        return view('client.applications', compact('bookings'));
     }
 
     public function enquiry()
@@ -390,7 +418,9 @@ class ClientController extends Controller
         abort_unless((int)$document->user_id === (int)Auth::id(), 403);
         try {
             if ($document->path) {
-                Storage::delete($document->path);
+                // Attempt delete on both public and local disks for backward compatibility
+                try { Storage::disk('public')->delete($document->path); } catch (\Throwable $e2) {}
+                try { Storage::disk('local')->delete($document->path); } catch (\Throwable $e3) {}
             }
         } catch (\Throwable $e) {
             // ignore storage deletion errors
@@ -406,13 +436,16 @@ class ClientController extends Controller
             'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
         $old = $document->path;
-        $newPath = $request->file('file')->store('documents');
+        $newPath = $request->file('file')->store('documents', 'public');
         $document->update([
             'path' => $newPath,
             'validated' => false, // revalidation may be required after replacement
         ]);
         try {
-            if ($old) Storage::delete($old);
+            if ($old) {
+                try { Storage::disk('public')->delete($old); } catch (\Throwable $e2) {}
+                try { Storage::disk('local')->delete($old); } catch (\Throwable $e3) {}
+            }
         } catch (\Throwable $e) {
             // ignore
         }

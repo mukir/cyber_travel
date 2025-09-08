@@ -17,16 +17,16 @@
                     </div>
                 </div>
                 <div class="mt-4 text-sm text-gray-700">
-                    Total referred bookings: <span class="font-semibold">{{ $referredCount }}</span>
+                    Total referred applications: <span class="font-semibold">{{ $referredCount }}</span>
                 </div>
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="px-6 py-4 border-b text-sm font-semibold">Recent referred bookings</div>
+                <div class="px-6 py-4 border-b text-sm font-semibold">Recent referred applications</div>
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
@@ -49,7 +49,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 text-gray-500">No referred bookings yet.</td>
+                                <td colspan="6" class="px-6 py-4 text-gray-500">No referred applications yet.</td>
                             </tr>
                         @endforelse
                     </tbody>

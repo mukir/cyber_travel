@@ -1,6 +1,6 @@
 <x-app-layout>
   <x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">My Bookings</h2>
+    <h2 class="font-semibold text-xl text-gray-800 leading-tight">My Applications</h2>
   </x-slot>
 
   <div class="py-8">
@@ -30,7 +30,7 @@
             @forelse($bookings as $b)
               <tr>
                 <td class="px-6 py-4 text-sm text-gray-900">#{{ $b->id }}</td>
-                <td class="px-6 py-4 text-sm text-emerald-700"><a href="{{ route('jobs.show', $b->job?->slug ?? '') }}" class="hover:underline">{{ $b->job?->name ?? '—' }}</a></td>
+                <td class="px-6 py-4 text-sm text-emerald-700"><a href="{{ route('services.show', $b->job?->slug ?? '') }}" class="hover:underline">{{ $b->job?->name ?? '—' }}</a></td>
                 <td class="px-6 py-4 text-sm text-gray-700">{{ $b->package?->name ?? '—' }}</td>
                 <td class="px-6 py-4 text-sm text-gray-700">{{ $b->quantity }}</td>
                 <td class="px-6 py-4 text-sm text-gray-700">{{ $b->start_date ? \Carbon\Carbon::parse($b->start_date)->format('Y-m-d') : '—' }}</td>
@@ -48,7 +48,7 @@
                 <td class="px-6 py-4 text-sm text-gray-500">{{ $b->created_at->format('Y-m-d H:i') }}</td>
                 <td class="px-6 py-4 text-sm text-right">
                   @if($b->status !== 'paid')
-                    <a href="{{ route('client.bookings.checkout', $b) }}" class="inline-block mr-2 rounded border border-emerald-600 px-3 py-1.5 text-emerald-700 text-sm hover:bg-emerald-50">Checkout</a>
+                    <a href="{{ route('client.applications.checkout', $b) }}" class="inline-block mr-2 rounded border border-emerald-600 px-3 py-1.5 text-emerald-700 text-sm hover:bg-emerald-50">Checkout</a>
                   @else
                     <span class="text-xs text-gray-500">—</span>
                   @endif
@@ -56,7 +56,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="9" class="px-6 py-6 text-sm text-gray-500">You have no bookings yet.</td>
+                <td colspan="9" class="px-6 py-6 text-sm text-gray-500">You have no applications yet.</td>
               </tr>
             @endforelse
           </tbody>

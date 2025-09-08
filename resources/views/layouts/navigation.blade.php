@@ -52,6 +52,20 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        @if(Auth::user()->is_admin())
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <div class="px-4 py-2 text-xs text-gray-400">Admin</div>
+                            <x-dropdown-link :href="route('admin.jobs.index')">{{ __('Jobs') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.targets.index')">{{ __('Targets') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.settings')">{{ __('Settings') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.services.index')">{{ __('Services') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.service_categories.index')">{{ __('Service Categories') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.document_types.index')">{{ __('Document Types') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.communications')">{{ __('Communication') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.logs')">{{ __('Logs') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.notes')">{{ __('Notes') }}</x-dropdown-link>
+                        @endif
+
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -107,11 +121,11 @@
             <x-responsive-nav-link :href="route('client.documents')" :active="request()->routeIs('client.documents')">
                 {{ __('Documents') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('client.bookings')" :active="request()->routeIs('client.bookings')">
-                {{ __('My Bookings') }}
+            <x-responsive-nav-link :href="route('client.applications')" :active="request()->routeIs('client.applications')">
+                {{ __('My Applications') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')">
-                {{ __('Apply for Job') }}
+            <x-responsive-nav-link :href="route('services.index')" :active="request()->routeIs('services.*')">
+                {{ __('Services') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('client.enquiry')" :active="request()->routeIs('client.enquiry')">
                 {{ __('Service Enquiry') }}
@@ -127,8 +141,8 @@
             <x-responsive-nav-link :href="route('admin.clients')" :active="request()->routeIs('admin.clients')">
                 {{ __('Clients') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.jobs.index')" :active="request()->routeIs('admin.jobs.*')">
-                {{ __('Jobs') }}
+            <x-responsive-nav-link :href="route('admin.services.index')" :active="request()->routeIs('admin.services.*')">
+                {{ __('Services') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.sales')" :active="request()->routeIs('admin.sales')">
                 {{ __('Sales') }}
@@ -173,6 +187,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('staff.reports')" :active="request()->routeIs('staff.reports')">
                 {{ __('Reports') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.clients')" :active="request()->routeIs('staff.clients')">
+                {{ __('My Clients') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('staff.conversions')" :active="request()->routeIs('staff.conversions')">
                 {{ __('Conversions') }}

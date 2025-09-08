@@ -33,6 +33,18 @@
             @error('description') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
           </div>
 
+          <div>
+            <label class="block text-sm font-medium">Categories</label>
+            <div class="mt-2 flex flex-wrap gap-3">
+              @foreach(($categories ?? []) as $cat)
+                <label class="inline-flex items-center gap-2">
+                  <input type="checkbox" name="categories[]" value="{{ $cat->id }}" class="rounded border" />
+                  <span class="text-sm">{{ $cat->name }}</span>
+                </label>
+              @endforeach
+            </div>
+          </div>
+
           <div class="flex items-center gap-2">
             <input id="active" type="checkbox" name="active" value="1" class="rounded border-gray-300" checked />
             <label for="active">Active</label>
@@ -47,4 +59,3 @@
     </div>
   </div>
 </x-app-layout>
-

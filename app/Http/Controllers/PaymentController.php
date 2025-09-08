@@ -162,6 +162,7 @@ class PaymentController extends Controller
             $phone = '254' . $phone;
         }
 
+        // Treat requested amount in booking currency (e.g., USD if booking is USD)
         $amount = (float)($data['amount'] ?? $booking->total_amount);
 
         // Clamp to remaining balance and guard against non-positive balance
@@ -176,10 +177,45 @@ class PaymentController extends Controller
             $amount = $remaining;
         }
 
+        // Enforce payment plan minimums: configurable deposit/second/final
+        $total = (float)$booking->total_amount;
+        $paid = (float)$booking->amount_paid;
+        $dp = (float) Settings::get('payment.plan.deposit_percent', 50);
+        $sp = (float) Settings::get('payment.plan.second_percent', 25);
+        $fp = (float) Settings::get('payment.plan.final_percent', 25);
+        $c1 = round($total * max($dp,0) / 100, 2);
+        $c2 = round($total * max($dp+$sp,0) / 100, 2);
+        $minStageDue = 0.0;
+        if ($paid + 0.01 < $c1) {
+            $minStageDue = max($c1 - $paid, 0);
+        } elseif ($paid + 0.01 < $c2) {
+            $minStageDue = max($c2 - $paid, 0);
+        } else {
+            $minStageDue = max($remaining, 0);
+        }
+        // If provided amount is less than stage minimum, block with message
+        if ($amount + 0.001 < $minStageDue) {
+            $msg = 'Minimum due for this installment is '.number_format($minStageDue, 2).' '.$booking->currency.'.';
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'error', 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg)->withInput();
+        }
+
         $reference = 'BK' . $booking->id;
         $description = 'Booking #' . $booking->id . ' payment';
 
-        $resp = SafaricomDarajaHelper::stkPushRequest($phone, $amount, $reference, $description);
+        // Convert to KES for M-PESA if booking currency is USD (configurable)
+        $chargeAmountKes = (int) round($amount);
+        if (strtoupper((string)$booking->currency) === 'USD') {
+            $rate = (float) Settings::get('currency.usd_to_kes', 135);
+            $chargeAmountKes = (int) max(round($amount * $rate), 1);
+        } else {
+            // For KES or other currencies, default to integer KES
+            $chargeAmountKes = (int) max(round($amount), 1);
+        }
+
+        $resp = SafaricomDarajaHelper::stkPushRequest($phone, $chargeAmountKes, $reference, $description);
 
         if (($resp['status'] ?? 'error') === 'success') {
             $data = $resp['data'] ?? [];
@@ -192,10 +228,15 @@ class PaymentController extends Controller
             Payment::create([
                 'booking_id' => $booking->id,
                 'method' => 'mpesa',
+                // Store amount in booking currency for internal balances
                 'amount' => $amount,
                 'status' => 'pending',
                 'reference' => $data['CheckoutRequestID'] ?? null,
-                'provider_payload' => $data,
+                // Include the KES charged and rate used for traceability
+                'provider_payload' => array_merge($data, [
+                    'charged_kes' => $chargeAmountKes,
+                    'usd_to_kes_rate' => isset($rate) ? $rate : null,
+                ]),
             ]);
 
             if ($request->expectsJson()) {
@@ -205,6 +246,7 @@ class PaymentController extends Controller
                     'checkoutId' => $data['CheckoutRequestID'] ?? null,
                     'merchantRequestId' => $data['MerchantRequestID'] ?? null,
                     'amount' => $amount,
+                    'chargedKes' => $chargeAmountKes,
                 ]);
             }
 
@@ -369,6 +411,26 @@ class PaymentController extends Controller
         }
         if ($amount > $remaining + 0.01) {
             $amount = $remaining;
+        }
+
+        // Enforce payment plan minimums for PayPal (configurable)
+        $total = (float)$booking->total_amount;
+        $paid = (float)$booking->amount_paid;
+        $dp = (float) Settings::get('payment.plan.deposit_percent', 50);
+        $sp = (float) Settings::get('payment.plan.second_percent', 25);
+        $fp = (float) Settings::get('payment.plan.final_percent', 25);
+        $c1 = round($total * max($dp,0) / 100, 2);
+        $c2 = round($total * max($dp+$sp,0) / 100, 2);
+        $minStageDue = 0.0;
+        if ($paid + 0.01 < $c1) {
+            $minStageDue = max($c1 - $paid, 0);
+        } elseif ($paid + 0.01 < $c2) {
+            $minStageDue = max($c2 - $paid, 0);
+        } else {
+            $minStageDue = max($remaining, 0);
+        }
+        if ($amount + 0.001 < $minStageDue) {
+            return back()->with('error', 'Minimum due for this installment is '.number_format($minStageDue, 2).' '.$booking->currency.'.');
         }
 
         // Optional server verification if secret present

@@ -10,6 +10,7 @@ class AdminSettingsController extends Controller
     public function index()
     {
         $defaultCurrency = SettingsHelper::get('default_currency', config('app.currency', env('APP_CURRENCY', 'KES')));
+        $usdToKes = (float) SettingsHelper::get('currency.usd_to_kes', 135);
         $currencies = [
             'KES','USD','EUR','GBP','UGX','TZS','NGN','ZAR','INR','AUD','CAD','CHF','CNY','JPY','AED','SAR'
         ];
@@ -38,17 +39,28 @@ class AdminSettingsController extends Controller
             'client_secret' => SettingsHelper::get('paypal.client_secret', env('PAYPAL_CLIENT_SECRET')),
             'base_url'      => SettingsHelper::get('paypal.base_url', env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com')),
         ];
+        $paymentPlan = [
+            'deposit_percent' => (float) SettingsHelper::get('payment.plan.deposit_percent', 50),
+            'second_percent'  => (float) SettingsHelper::get('payment.plan.second_percent', 25),
+            'final_percent'   => (float) SettingsHelper::get('payment.plan.final_percent', 25),
+        ];
         $company = [
             'whatsapp_number' => SettingsHelper::get('company.whatsapp_number', ''),
         ];
 
-        return view('admin.settings', compact('defaultCurrency', 'currencies', 'safaricom', 'paypal', 'company'));
+        return view('admin.settings', compact('defaultCurrency', 'usdToKes', 'currencies', 'safaricom', 'paypal', 'paymentPlan', 'company'));
     }
 
     public function update(Request $request)
     {
         $data = $request->validate([
             'default_currency'      => ['required', 'in:KES,USD,EUR,GBP,UGX,TZS,NGN,ZAR,INR,AUD,CAD,CHF,CNY,JPY,AED,SAR'],
+            // Currency
+            'currency.usd_to_kes'   => ['nullable', 'numeric', 'min:1'],
+            // Payment plan
+            'payment.plan.deposit_percent' => ['nullable','numeric','min:0','max:100'],
+            'payment.plan.second_percent'  => ['nullable','numeric','min:0','max:100'],
+            'payment.plan.final_percent'   => ['nullable','numeric','min:0','max:100'],
             'safaricom.base_url'     => ['nullable', 'url'],
             'safaricom.consumer_key' => ['nullable', 'string'],
             'safaricom.consumer_secret' => ['nullable', 'string'],
@@ -74,6 +86,14 @@ class AdminSettingsController extends Controller
         ]);
 
         SettingsHelper::set('default_currency', strtoupper(trim($data['default_currency'])));
+
+        // Validate payment plan sum equals 100 if provided
+        $dp = (float)($data['payment.plan.deposit_percent'] ?? SettingsHelper::get('payment.plan.deposit_percent', 50));
+        $sp = (float)($data['payment.plan.second_percent'] ?? SettingsHelper::get('payment.plan.second_percent', 25));
+        $fp = (float)($data['payment.plan.final_percent'] ?? SettingsHelper::get('payment.plan.final_percent', 25));
+        if (round($dp + $sp + $fp, 2) !== 100.00) {
+            return back()->with('error', 'Payment plan percentages must add up to 100.');
+        }
 
         // If mode provided and base_url empty, derive automatically based on mode
         if (!filled($data['paypal.base_url'] ?? null) && isset($data['paypal.mode'])) {

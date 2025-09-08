@@ -18,6 +18,7 @@
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Price</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
               <th class="px-6 py-3"></th>
@@ -28,6 +29,13 @@
               <tr>
                 <td class="px-6 py-4 text-sm text-gray-900">{{ $job->name }}</td>
                 <td class="px-6 py-4 text-sm text-gray-500">{{ $job->slug }}</td>
+                <td class="px-6 py-4 text-sm text-gray-700">
+                  @forelse(($job->categories ?? collect()) as $cat)
+                    <span class="inline-block px-2 py-0.5 mr-1 mb-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">{{ $cat->name }}</span>
+                  @empty
+                    <span class="text-xs text-gray-400">—</span>
+                  @endforelse
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-500">{{ number_format($job->base_price, 2) }} {{ env('APP_CURRENCY','KES') }}</td>
                 <td class="px-6 py-4 text-sm">
                   @if($job->active)
@@ -47,7 +55,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="5" class="px-6 py-6 text-sm text-gray-500">No jobs yet.</td>
+                <td colspan="6" class="px-6 py-6 text-sm text-gray-500">No jobs yet.</td>
               </tr>
             @endforelse
           </tbody>
@@ -58,4 +66,3 @@
     </div>
   </div>
 </x-app-layout>
-

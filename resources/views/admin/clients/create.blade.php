@@ -19,6 +19,15 @@
                         <input type="email" name="email" class="border rounded w-full" required>
                     </div>
                     <div>
+                        <label>Assign Staff (Point of Contact)</label>
+                        <select name="sales_rep_id" class="border rounded w-full">
+                            <option value="">-- Unassigned --</option>
+                            @foreach(($staff ?? []) as $rep)
+                                <option value="{{ $rep->id }}">{{ $rep->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
                         <label>Password</label>
                         <input type="password" name="password" class="border rounded w-full" required>
                     </div>
@@ -31,4 +40,3 @@
         </div>
     </div>
 </x-app-layout>
-

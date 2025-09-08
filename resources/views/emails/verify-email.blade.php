@@ -111,7 +111,7 @@
                 <strong>What happens next?</strong> After verifying your email, you'll have full access to:
                 <ul style="margin: 10px 0; padding-left: 20px;">
                     <li>Browse our travel packages and services</li>
-                    <li>Make bookings and reservations</li>
+                    <li>Make applications and reservations</li>
                     <li>Access your personal dashboard</li>
                     <li>Receive exclusive travel offers</li>
                 </ul>
