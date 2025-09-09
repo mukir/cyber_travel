@@ -16,6 +16,7 @@ class AdminClientController extends Controller
         $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         $query = User::where('role', UserRole::Client)->orderBy('name');
         $selectedRep = $request->get('rep');
+        $q = trim((string)$request->get('q', ''));
         if ($selectedRep === 'unassigned') {
             $ids = \App\Models\ClientProfile::whereNull('sales_rep_id')->pluck('user_id');
             $query->whereIn('id', $ids);
@@ -23,8 +24,17 @@ class AdminClientController extends Controller
             $ids = \App\Models\ClientProfile::where('sales_rep_id', $selectedRep)->pluck('user_id');
             $query->whereIn('id', $ids);
         }
+        if ($q !== '') {
+            $digits = preg_replace('/\D+/', '', $q);
+            $phoneIds = \App\Models\ClientProfile::where('phone', 'like', '%'.$digits.'%')->pluck('user_id');
+            $query->where(function($w) use ($q, $phoneIds) {
+                $w->where('name', 'like', '%'.$q.'%')
+                  ->orWhere('email', 'like', '%'.$q.'%')
+                  ->orWhereIn('id', $phoneIds);
+            });
+        }
         $clients = $query->paginate(20)->withQueryString();
-        return view('admin.clients', compact('clients','staff','selectedRep'));
+        return view('admin.clients', compact('clients','staff','selectedRep','q'));
     }
 
     public function create()
@@ -82,8 +92,12 @@ class AdminClientController extends Controller
             ->whereHas('booking', function($q) use ($client){ $q->where('user_id', $client->id); })
             ->orderByDesc('created_at')
             ->get();
+        $leads = \App\Models\Lead::with(['notes','salesRep'])
+            ->where('client_id', $client->id)
+            ->orderByDesc('created_at')
+            ->get();
 
-        return view('admin.clients.show', compact('client','profile','documents','bookings','payments'));
+        return view('admin.clients.show', compact('client','profile','documents','bookings','payments','leads'));
     }
 
     public function update(Request $request, User $client)

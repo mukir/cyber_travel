@@ -58,56 +58,7 @@
                                 </td>
                                 <td class="px-4 py-2">{{ optional(\App\Models\User::find($profile?->sales_rep_id))->name ?: '—' }}</td>
                                 <td class="px-4 py-2 space-x-3 whitespace-nowrap">
-                                    <a href="{{ route('admin.clients.edit', $client) }}" class="text-blue-600 hover:underline">Edit</a>
-                                    <a href="{{ route('admin.clients.documents', $client) }}" class="text-green-600 hover:underline">Documents</a>
-                                    @php
-                                        $firstName = explode(' ', trim(($profile->name ?? $client->name) ?: ''))[0] ?? '';
-                                        $latest = \App\Models\Booking::with(['job','package'])
-                                            ->where('user_id', $client->id)
-                                            ->latest()
-                                            ->first();
-                                        $jobName = $latest?->job?->name;
-                                        $pkgName = $latest?->package?->name;
-                                        $balance = $latest ? max(((float)$latest->total_amount) - ((float)$latest->amount_paid), 0) : null;
-                                        $currency = $latest?->currency ?? \App\Helpers\Settings::get('default_currency', config('app.currency', env('APP_CURRENCY', 'KES')));
-                                        $docs = \App\Models\ClientDocument::where('user_id', $client->id)->pluck('type')->all();
-                                        $required = \App\Models\DocumentType::where('active', true)->where('required', true)->pluck('key')->all();
-                                        $missing = array_values(array_diff($required, $docs));
-                                        $pendingText = empty($missing) ? 'none' : implode(', ', $missing);
-                                        $checkoutUrl = $latest ? route('client.applications.checkout', $latest) : route('jobs.index');
-
-                                        $title = ($jobName || $pkgName)
-                                            ? trim(($jobName ?: 'package') . ($pkgName ? (' - ' . $pkgName) : ''))
-                                            : null;
-
-                                        $lines = [];
-                                        $lines[] = $title
-                                            ? ("Hi {$firstName}, quick follow-up on your {$title}.")
-                                            : ("Hi {$firstName}, quick follow-up on your application.");
-                                        $lines[] = 'Pending: ' . $pendingText . '.';
-                                        if (isset($balance) && $balance > 0.01) {
-                                            $lines[] = 'Balance: ' . number_format($balance, 2) . ' ' . $currency . '. Pay: ' . $checkoutUrl;
-                                        } else {
-                                            $lines[] = 'You are almost set. Details: ' . $checkoutUrl;
-                                        }
-                                        $message = implode("\n", $lines);
-                                        $to = \App\Helpers\Phone::toE164Digits($profile?->phone);
-                                        $isValidWa = $to && preg_match('/^[1-9]\d{7,14}$/', $to);
-                                        $waLink = $isValidWa ? ('https://wa.me/' . $to . '?text=' . rawurlencode($message)) : null;
-                                    @endphp
-                                    @if(!empty($waLink))
-                                        <a href="{{ $waLink }}" target="_blank" rel="noopener" class="text-emerald-600 hover:underline">WhatsApp</a>
-                                    @else
-                                        <span class="text-gray-400" title="{{ empty($to) ? 'No phone on profile' : 'Invalid phone for WhatsApp' }}">WhatsApp</span>
-                                    @endif
-                                    @if($latest && $balance > 0.01)
-                                        <a href="{{ route('admin.applications.manualPayment', $latest) }}" class="text-amber-700 hover:underline">Record Payment</a>
-                                    @endif
-                                    <form action="{{ route('admin.clients.destroy', $client) }}" method="POST" class="inline" onsubmit="return confirm('Delete client?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:underline">Delete</button>
-                                    </form>
+                                    <a href="{{ route('admin.clients.show', $client) }}" class="text-indigo-600 hover:underline">View</a>
                                 </td>
                             </tr>
                         @empty

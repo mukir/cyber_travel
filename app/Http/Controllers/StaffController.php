@@ -252,4 +252,29 @@ class StaffController extends Controller
         ]);
         return redirect()->route('staff.leads')->with('success', 'Note saved');
     }
+
+    // Detailed view for an assigned client
+    public function showClient(\App\Models\User $client)
+    {
+        $user = auth()->user();
+        abort_unless($client && method_exists($client, 'is_client') && $client->is_client(), 404);
+        $assigned = \App\Models\ClientProfile::where('user_id', $client->id)->where('sales_rep_id', $user->id)->exists();
+        abort_unless($assigned, 403);
+
+        $profile = \App\Models\ClientProfile::firstOrNew(['user_id' => $client->id]);
+        $documents = \App\Models\ClientDocument::where('user_id', $client->id)->orderByDesc('created_at')->get();
+        $bookings = \App\Models\Booking::with(['job','package','payments'])
+            ->where('user_id', $client->id)
+            ->orderByDesc('created_at')
+            ->get();
+        $payments = \App\Models\Payment::with('booking')
+            ->whereHas('booking', fn($q) => $q->where('user_id', $client->id))
+            ->orderByDesc('created_at')->get();
+        $leads = \App\Models\Lead::with(['notes','salesRep'])
+            ->where('client_id', $client->id)
+            ->where('sales_rep_id', $user->id)
+            ->orderByDesc('created_at')->get();
+
+        return view('staff.client_show', compact('client','profile','documents','bookings','payments','leads'));
+    }
 }
