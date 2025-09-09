@@ -26,6 +26,18 @@
                 </div>
             </div>
 
+            <div class="grid md:grid-cols-4 gap-6">
+                <a href="{{ route('admin.staff.index') }}" class="bg-white shadow sm:rounded-lg p-6 flex items-center justify-between hover:bg-gray-50">
+                    <div>
+                        <div class="text-sm text-gray-600">Team</div>
+                        <div class="text-lg font-semibold">Manage Staff</div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
             <div class="bg-white shadow sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold">Payments (Last 7 days)</h3>
                 <div class="mt-4">

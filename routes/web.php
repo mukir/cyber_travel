@@ -162,6 +162,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/targets', [StaffController::class, 'targets'])->name('targets');
         Route::get('/referrals', [StaffController::class, 'referrals'])->name('referrals');
         Route::get('/clients', [StaffController::class, 'clients'])->name('clients');
+        Route::get('/clients/{client}', [StaffController::class, 'showClient'])->name('clients.show');
     });
 });
 
