@@ -18,5 +18,8 @@
                     <x-nav-link :href="route('admin.leads.index')" :active="request()->routeIs('admin.leads.*')">
                         {{ __('Leads') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('admin.staff.index')" :active="request()->routeIs('admin.staff.*')">
+                        {{ __('Staff') }}
+                    </x-nav-link>
                     {{-- Other admin links are available in the profile dropdown --}}
                     @endif

@@ -57,6 +57,7 @@
                             <div class="px-4 py-2 text-xs text-gray-400">Admin</div>
                             <x-dropdown-link :href="route('admin.jobs.index')">{{ __('Jobs') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.targets.index')">{{ __('Targets') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.staff.index')">{{ __('Staff') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.settings')">{{ __('Settings') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.services.index')">{{ __('Services') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.service_categories.index')">{{ __('Service Categories') }}</x-dropdown-link>
@@ -152,6 +153,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.reports')" :active="request()->routeIs('admin.reports')">
                 {{ __('Reports') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.staff.index')" :active="request()->routeIs('admin.staff.*')">
+                {{ __('Staff') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.settings')" :active="request()->routeIs('admin.settings')">
                 {{ __('Settings') }}
