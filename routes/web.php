@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\AdminClientController;
+use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\AdminSaleController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\BookingController;
@@ -129,6 +130,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/communications', [AdminController::class, 'communications'])->name('communications');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
         Route::get('/notes', [AdminController::class, 'notes'])->name('notes');
+
+        // Staff management
+        Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff.index');
+        Route::post('/staff/{staff}/toggle', [AdminStaffController::class, 'toggle'])->name('staff.toggle');
 
         // Jobs management
         Route::resource('jobs', \App\Http\Controllers\AdminJobController::class)->except(['show']);

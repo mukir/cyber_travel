@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Services\RoundRobin;
 
 class RegisteredUserController extends Controller
 {
@@ -78,6 +79,22 @@ class RegisteredUserController extends Controller
             }
         } catch (\Throwable $e) {
             // swallow profile errors to avoid blocking registration
+        }
+
+        // Auto-assign a sales rep in round-robin for new signups
+        try {
+            $profile = \App\Models\ClientProfile::firstOrNew(['user_id' => $user->id]);
+            if (empty($profile->sales_rep_id)) {
+                $nextStaffId = RoundRobin::nextStaffId('sales_rep');
+                if ($nextStaffId) {
+                    $profile->sales_rep_id = $nextStaffId;
+                    if (!$profile->name) { $profile->name = $user->name; }
+                    if (!$profile->email) { $profile->email = $user->email; }
+                    $profile->save();
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore assignment failures
         }
 
         event(new Registered($user));

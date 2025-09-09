@@ -17,20 +17,20 @@ class AdminLeadController extends Controller
         if ($request->filled('staff_id')) { $q->where('sales_rep_id', $request->integer('staff_id')); }
         $leads = $q->paginate(20)->appends($request->query());
 
-        $staff = User::where('role', UserRole::Staff)->orderBy('name')->get();
+        $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         return view('admin.leads.index', compact('leads','staff'));
     }
 
     public function create()
     {
-        $staff = User::where('role', UserRole::Staff)->orderBy('name')->get();
+        $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         return view('admin.leads.create', compact('staff'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'sales_rep_id' => ['required','exists:users,id'],
+            'sales_rep_id' => ['required', \Illuminate\Validation\Rule::exists('users','id')->where(fn($q)=>$q->where('role', UserRole::Staff->value)->where('is_active', 1))],
             'name' => ['required','string','max:255'],
             'email' => ['nullable','email','max:255'],
             'phone' => ['nullable','string','max:255'],
@@ -47,14 +47,14 @@ class AdminLeadController extends Controller
 
     public function edit(Lead $lead)
     {
-        $staff = User::where('role', UserRole::Staff)->orderBy('name')->get();
+        $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         return view('admin.leads.edit', compact('lead','staff'));
     }
 
     public function update(Request $request, Lead $lead)
     {
         $data = $request->validate([
-            'sales_rep_id' => ['required','exists:users,id'],
+            'sales_rep_id' => ['required', \Illuminate\Validation\Rule::exists('users','id')->where(fn($q)=>$q->where('role', UserRole::Staff->value)->where('is_active', 1))],
             'name' => ['required','string','max:255'],
             'email' => ['nullable','email','max:255'],
             'phone' => ['nullable','string','max:255'],
@@ -73,4 +73,3 @@ class AdminLeadController extends Controller
         return redirect()->route('admin.leads.index')->with('success', 'Lead deleted');
     }
 }
-

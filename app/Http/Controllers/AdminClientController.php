@@ -13,7 +13,7 @@ class AdminClientController extends Controller
 {
     public function index(\Illuminate\Http\Request $request)
     {
-        $staff = User::where('role', UserRole::Staff)->orderBy('name')->get();
+        $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         $query = User::where('role', UserRole::Client)->orderBy('name');
         $selectedRep = $request->get('rep');
         if ($selectedRep === 'unassigned') {
@@ -29,7 +29,7 @@ class AdminClientController extends Controller
 
     public function create()
     {
-        $staff = User::where('role', UserRole::Staff)->orderBy('name')->get();
+        $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         return view('admin.clients.create', compact('staff'));
     }
 
@@ -39,7 +39,10 @@ class AdminClientController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
-            'sales_rep_id' => 'nullable|exists:users,id',
+            'sales_rep_id' => [
+                'nullable',
+                \Illuminate\Validation\Rule::exists('users','id')->where(fn($q)=>$q->where('role', UserRole::Staff->value)->where('is_active', 1)),
+            ],
         ]);
 
         $data['password'] = Hash::make($data['password']);
@@ -63,7 +66,7 @@ class AdminClientController extends Controller
     public function edit(User $client)
     {
         $profile = ClientProfile::firstOrNew(['user_id' => $client->id]);
-        $staff = User::where('role', UserRole::Staff)->orderBy('name')->get();
+        $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         return view('admin.clients.edit', compact('client', 'profile', 'staff'));
     }
 
@@ -89,7 +92,10 @@ class AdminClientController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $client->id,
             'password' => 'nullable|string|min:8',
-            'sales_rep_id' => 'nullable|exists:users,id',
+            'sales_rep_id' => [
+                'nullable',
+                \Illuminate\Validation\Rule::exists('users','id')->where(fn($q)=>$q->where('role', UserRole::Staff->value)->where('is_active', 1)),
+            ],
         ]);
 
         if (!empty($data['password'])) {
@@ -156,7 +162,7 @@ class AdminClientController extends Controller
         ]);
 
         // Ensure target is a staff user
-        $staff = User::where('id', $data['assign_to'])->where('role', \App\Enums\UserRole::Staff)->first();
+        $staff = User::where('id', $data['assign_to'])->where('role', \App\Enums\UserRole::Staff)->where('is_active', true)->first();
         if (!$staff) {
             return back()->with('error', 'Selected user is not a staff member.');
         }
