@@ -18,7 +18,7 @@ class AdminSaleController extends Controller
     public function create()
     {
         $clients = User::where('role', UserRole::Client)->get();
-        $staff   = User::where('role', UserRole::Staff)->get();
+        $staff   = User::where('role', UserRole::Staff)->where('is_active', true)->get();
         return view('admin.sales.create', compact('clients', 'staff'));
     }
 
@@ -26,7 +26,10 @@ class AdminSaleController extends Controller
     {
         $data = $request->validate([
             'client_id'  => 'required|exists:users,id',
-            'staff_id'   => 'required|exists:users,id',
+            'staff_id'   => [
+                'required',
+                \Illuminate\Validation\Rule::exists('users','id')->where(fn($q)=>$q->where('role', UserRole::Staff->value)->where('is_active', 1)),
+            ],
             'amount'     => 'required|numeric',
             'commission' => 'required|numeric',
             'status'     => 'required|string',
@@ -40,7 +43,7 @@ class AdminSaleController extends Controller
     public function edit(Sale $sale)
     {
         $clients = User::where('role', UserRole::Client)->get();
-        $staff   = User::where('role', UserRole::Staff)->get();
+        $staff   = User::where('role', UserRole::Staff)->where('is_active', true)->get();
         return view('admin.sales.edit', compact('sale', 'clients', 'staff'));
     }
 
@@ -48,7 +51,10 @@ class AdminSaleController extends Controller
     {
         $data = $request->validate([
             'client_id'  => 'required|exists:users,id',
-            'staff_id'   => 'required|exists:users,id',
+            'staff_id'   => [
+                'required',
+                \Illuminate\Validation\Rule::exists('users','id')->where(fn($q)=>$q->where('role', UserRole::Staff->value)->where('is_active', 1)),
+            ],
             'amount'     => 'required|numeric',
             'commission' => 'required|numeric',
             'status'     => 'required|string',

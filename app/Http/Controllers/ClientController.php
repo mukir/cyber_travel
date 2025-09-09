@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NewEnquiryMail;
 use App\Models\SupportTicket;
+use App\Services\RoundRobin;
 
 class ClientController extends Controller
 {
@@ -348,12 +349,21 @@ class ClientController extends Controller
             ['name' => Auth::user()->name, 'email' => Auth::user()->email]
         );
 
-        // Choose a sales rep: prefer assigned on profile; fallback to first staff, then first admin
+        // Choose a sales rep: prefer assigned on profile; fallback to round-robin staff, then first admin
         $salesRepId = $profile->sales_rep_id;
         if (!$salesRepId) {
-            $salesRepId = optional(\App\Models\User::where('role', \App\Enums\UserRole::Staff)->orderBy('id')->first())->id
+            $salesRepId = RoundRobin::nextStaffId('sales_rep')
                 ?: optional(\App\Models\User::where('role', \App\Enums\UserRole::Admin)->orderBy('id')->first())->id
                 ?: Auth::id();
+            // Persist the assignment to the profile when we assigned a staff
+            if ($salesRepId) {
+                try {
+                    $profile->sales_rep_id = $salesRepId;
+                    $profile->save();
+                } catch (\Throwable $e) {
+                    // ignore save failures
+                }
+            }
         }
 
         $user = Auth::user();
