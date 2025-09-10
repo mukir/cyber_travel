@@ -109,10 +109,7 @@ class StaffController extends Controller
         $payments = (clone $base)->with('booking')->orderByDesc('created_at')->paginate(15);
         $total = (clone $base)->sum('amount');
         $rate = (float)config('sales.commission_rate', (float)env('SALES_COMMISSION_RATE', 10));
-        $commission = (clone $base)->get()->sum(function($p) use ($rate){
-            $row = \App\Models\Commission::where('payment_id', $p->id)->first();
-            return $row?->amount ?? round(((float)$p->amount) * $rate / 100, 2);
-        });
+        $commission = (float) \App\Models\Commission::where('staff_id', $user->id)->sum('amount');
         return view('staff.commissions', compact('payments','total','commission','rate'));
     }
 
@@ -141,8 +138,8 @@ class StaffController extends Controller
         fputcsv($out, ['Date','Booking','Client','Method','Amount','Rate %','Commission']);
         foreach ($payments as $p) {
             $comm = \App\Models\Commission::where('payment_id', $p->id)->first();
-            $rate = $comm?->rate ?? $rateDefault;
-            $commission = $comm?->amount ?? round(((float)$p->amount) * $rate / 100, 2);
+            $rate = $comm?->rate ?? 0.0;
+            $commission = $comm?->amount ?? 0.0;
             fputcsv($out, [
                 $p->created_at->format('Y-m-d H:i'),
                 'BK'.$p->booking_id,
@@ -179,8 +176,8 @@ class StaffController extends Controller
         $rateDefault = (float)config('sales.commission_rate', (float)env('SALES_COMMISSION_RATE', 10));
         $rows = $payments->map(function ($p) use ($rateDefault) {
             $comm = \App\Models\Commission::where('payment_id', $p->id)->first();
-            $rate = $comm?->rate ?? $rateDefault;
-            $commission = $comm?->amount ?? round(((float)$p->amount) * $rate / 100, 2);
+            $rate = $comm?->rate ?? 0.0;
+            $commission = $comm?->amount ?? 0.0;
             return [
                 'date' => $p->created_at->format('Y-m-d H:i'),
                 'booking' => 'BK'.$p->booking_id,

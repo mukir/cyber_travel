@@ -42,6 +42,31 @@
             @error('description') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
           </div>
 
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium">Destination Country</label>
+              <input name="country" list="countries" class="mt-1 w-full rounded border p-2" value="{{ old('country', $job->country) }}" placeholder="e.g., Poland, UAE, USA" />
+              <datalist id="countries">
+                @foreach(($countries ?? []) as $c)
+                  <option value="{{ $c->name }}">{{ strtoupper($c->code) }}</option>
+                @endforeach
+              </datalist>
+              @error('country') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Region</label>
+              <select name="region" class="mt-1 w-full rounded border p-2">
+                @php($r = old('region', $job->region))
+                <option value="" @selected(!$r)>Auto (from country)</option>
+                <option value="europe" @selected($r==='europe')>Europe</option>
+                <option value="gulf" @selected($r==='gulf')>Gulf</option>
+                <option value="americas" @selected($r==='americas')>Americas</option>
+                <option value="other" @selected($r==='other')>Other</option>
+              </select>
+              @error('region') <div class="text-sm text-red-600">{{ $message }}</div> @enderror
+            </div>
+          </div>
+
           <div>
             <label class="block text-sm font-medium">Categories</label>
             <div class="mt-2 flex flex-wrap gap-3">

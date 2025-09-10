@@ -18,7 +18,8 @@ class AdminJobController extends Controller
     public function create()
     {
         $categories = ServiceCategory::where('active', true)->orderBy('name')->get();
-        return view('admin.jobs.create', compact('categories'));
+        $countries = \App\Models\Country::where('active', true)->orderBy('name')->get();
+        return view('admin.jobs.create', compact('categories','countries'));
     }
 
     public function store(Request $request)
@@ -27,6 +28,8 @@ class AdminJobController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:service_jobs,slug'],
             'description' => ['nullable', 'string'],
+            'country' => ['nullable', 'string', 'max:120'],
+            'region' => ['nullable', 'in:europe,gulf,americas,other'],
             'base_price' => ['nullable', 'numeric', 'min:0'],
             'active' => ['nullable', 'boolean'],
             'categories' => ['nullable', 'array'],
@@ -51,7 +54,8 @@ class AdminJobController extends Controller
     {
         $job->load(['packages','categories']);
         $categories = ServiceCategory::orderBy('name')->get();
-        return view('admin.jobs.edit', compact('job','categories'));
+        $countries = \App\Models\Country::where('active', true)->orderBy('name')->get();
+        return view('admin.jobs.edit', compact('job','categories','countries'));
     }
 
     public function update(Request $request, Job $job)
@@ -60,6 +64,8 @@ class AdminJobController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:service_jobs,slug,' . $job->id],
             'description' => ['nullable', 'string'],
+            'country' => ['nullable', 'string', 'max:120'],
+            'region' => ['nullable', 'in:europe,gulf,americas,other'],
             'base_price' => ['nullable', 'numeric', 'min:0'],
             'active' => ['nullable', 'boolean'],
             'categories' => ['nullable', 'array'],

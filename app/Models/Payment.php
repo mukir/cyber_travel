@@ -31,23 +31,36 @@ class Payment extends Model
                 if ($payment->status !== 'paid') {
                     return;
                 }
-                // Avoid duplicates per payment
-                if (\App\Models\Commission::where('payment_id', $payment->id)->exists()) {
-                    return;
-                }
                 $booking = $payment->booking;
                 if (!$booking || !$booking->referred_by_id) {
                     return; // no referring staff to pay commission to
                 }
-                $rate = (float)config('sales.commission_rate', (float)env('SALES_COMMISSION_RATE', 10));
-                $amount = round(((float)$payment->amount) * $rate / 100, 2);
-                \App\Models\Commission::create([
-                    'payment_id' => $payment->id,
-                    'staff_id'   => $booking->referred_by_id,
-                    'rate'       => $rate,
-                    'amount'     => $amount,
-                    'type'       => 'milestone',
-                ]);
+                // Only award region commission when booking is fully paid up
+                $sumPaid = (float) $booking->payments()->where('status', 'paid')->sum('amount');
+                $isPaidUp = (\App\Services\CommissionRules::isBookingPaidUp($booking)) || ($sumPaid + 0.01 >= (float)$booking->total_amount);
+
+                // Determine if a commission for this booking already exists (region_fixed)
+                $existsForBooking = \App\Models\Commission::where('type', 'region_fixed')
+                    ->whereHas('payment', function($q) use ($booking) { $q->where('booking_id', $booking->id); })
+                    ->exists();
+
+                if ($isPaidUp && !$existsForBooking) {
+                    $job = $booking->job;
+                    $fixed = \App\Services\CommissionRules::computeRegionCommission($job);
+                    if ($fixed !== null) {
+                        // Link the commission to this (final/any) paid payment
+                        \App\Models\Commission::create([
+                            'payment_id' => $payment->id,
+                            'staff_id'   => $booking->referred_by_id,
+                            'rate'       => 0,
+                            'amount'     => $fixed,
+                            'type'       => 'region_fixed',
+                        ]);
+                        return; // done
+                    }
+                }
+
+                // No percentage fallback: policy favors fixed commissions by region only.
             } catch (\Throwable $e) {
                 // fail-safe: never break payment flow
                 \Log::error('Failed creating commission', [

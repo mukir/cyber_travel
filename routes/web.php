@@ -148,6 +148,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('leads', \App\Http\Controllers\AdminLeadController::class)->except(['show'])->names('leads');
         Route::get('/leads/{lead}', [\App\Http\Controllers\AdminLeadController::class, 'show'])->name('leads.show');
         Route::post('/leads/{lead}/note', [\App\Http\Controllers\AdminLeadController::class, 'saveNote'])->name('leads.note');
+
+        // Countries management
+        Route::resource('countries', \App\Http\Controllers\AdminCountryController::class)->names('countries')->except(['show']);
         // Sales targets management
         Route::resource('targets', \App\Http\Controllers\AdminTargetController::class)->except(['show'])->names('targets');
         // Job packages (minimal inline management)
