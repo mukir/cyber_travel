@@ -65,19 +65,29 @@
                         @csrf
                         <button class="px-4 py-2 rounded text-white {{ $staff->is_active ? 'bg-gray-700' : 'bg-emerald-700' }}">{{ $staff->is_active ? 'Deactivate' : 'Activate' }}</button>
                     </form>
-                    <form method="POST" action="{{ route('admin.staff.makeReception', $staff) }}" onsubmit="return confirm('Convert this user to Reception role?');">
-                        @csrf
-                        <button class="px-4 py-2 rounded text-white bg-amber-700">Make Reception</button>
-                    </form>
-                    <form method="POST" action="{{ route('admin.staff.promote', $staff) }}" onsubmit="return confirm('Promote this staff member to admin?');">
-                        @csrf
-                        <button class="px-4 py-2 rounded text-white bg-gray-800">Make Admin</button>
-                    </form>
+                    @if(method_exists($staff, 'is_reception') ? !$staff->is_reception() : ($staff->role !== 'reception'))
+                        <form method="POST" action="{{ route('admin.staff.makeReception', $staff) }}" onsubmit="return confirm('Convert this user to Reception role?');">
+                            @csrf
+                            <button class="px-4 py-2 rounded text-white bg-amber-700">Make Reception</button>
+                        </form>
+                    @endif
+                    @if(!(method_exists($staff,'is_admin') && $staff->is_admin()))
+                        <form method="POST" action="{{ route('admin.staff.promote', $staff) }}" onsubmit="return confirm('Promote this staff member to admin?');">
+                            @csrf
+                            <button class="px-4 py-2 rounded text-white bg-gray-800">Make Admin</button>
+                        </form>
+                    @endif
                     <form method="POST" action="{{ route('admin.staff.destroy', $staff) }}" onsubmit="return confirm('Delete this staff member? This cannot be undone.');">
                         @csrf
                         @method('DELETE')
                         <button class="px-4 py-2 rounded text-white bg-red-600">Delete</button>
                     </form>
+                    @if(method_exists($staff, 'is_reception') ? $staff->is_reception() : ($staff->role === 'reception'))
+                        <form method="POST" action="{{ route('admin.staff.makeStaff', $staff) }}" onsubmit="return confirm('Convert this user to Staff role?');">
+                            @csrf
+                            <button class="px-4 py-2 rounded text-white bg-slate-700">Make Staff</button>
+                        </form>
+                    @endif
                     <a href="{{ route('admin.staff.index') }}" class="px-4 py-2 rounded border">Back</a>
                 </div>
             </div>

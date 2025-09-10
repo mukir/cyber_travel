@@ -81,13 +81,27 @@ class RegisteredUserController extends Controller
             // swallow profile errors to avoid blocking registration
         }
 
-        // Auto-assign a sales rep in round-robin for new signups
+        // Auto-assign a sales rep:
+        // 1) Prefer referral cookie if it maps to an active staff
+        // 2) Otherwise, use Round-Robin
         try {
             $profile = \App\Models\ClientProfile::firstOrNew(['user_id' => $user->id]);
             if (empty($profile->sales_rep_id)) {
-                $nextStaffId = RoundRobin::nextStaffId('sales_rep');
-                if ($nextStaffId) {
-                    $profile->sales_rep_id = $nextStaffId;
+                $refCode = (string) ($request->cookie('ref') ?? '');
+                $refStaffId = null;
+                if ($refCode !== '') {
+                    $refStaff = User::where('referral_code', $refCode)->first();
+                    if ($refStaff && (method_exists($refStaff, 'is_staff') ? $refStaff->is_staff() : ($refStaff->role === 'staff')) && (bool)($refStaff->is_active)) {
+                        $refStaffId = (int) $refStaff->id;
+                    }
+                }
+
+                $assignId = $refStaffId;
+                if (!$assignId) {
+                    $assignId = RoundRobin::nextStaffId('sales_rep');
+                }
+                if ($assignId) {
+                    $profile->sales_rep_id = $assignId;
                     if (!$profile->name) { $profile->name = $user->name; }
                     if (!$profile->email) { $profile->email = $user->email; }
                     $profile->save();

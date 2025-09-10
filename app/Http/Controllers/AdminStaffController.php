@@ -229,6 +229,20 @@ class AdminStaffController extends Controller
         return redirect()->route('admin.staff.index')->with('success', $staff->name.' is now Reception.');
     }
 
+    public function makeStaff(User $staff)
+    {
+        if (!$staff) {
+            abort(404);
+        }
+        // Allow converting from reception to staff (or keep staff as staff)
+        if (!($staff->role === UserRole::Reception || $staff->role === 'reception' || $staff->role === UserRole::Staff || $staff->role === 'staff')) {
+            abort(403);
+        }
+        $staff->role = UserRole::Staff;
+        $staff->save();
+        return redirect()->route('admin.staff.index')->with('success', $staff->name.' is now Staff.');
+    }
+
     public function toggle(User $staff)
     {
         if (!$staff || ($staff->role !== UserRole::Staff && $staff->role !== 'staff')) {
