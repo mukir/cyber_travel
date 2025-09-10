@@ -36,6 +36,14 @@
                         <input type="email" name="email" value="{{ old('email', $staff->email) }}" class="w-full border rounded px-3 py-2" required />
                     </div>
                     <div>
+                        <label class="block text-sm font-medium">Role</label>
+                        @php($r = old('role', ($staff->is_reception() ? 'reception' : 'staff')))
+                        <select name="role" class="w-full border rounded px-3 py-2">
+                            <option value="staff" @selected($r==='staff')>Staff</option>
+                            <option value="reception" @selected($r==='reception')>Reception</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium">Phone</label>
                         <input type="text" name="phone" value="{{ old('phone', $staff->phone) }}" class="w-full border rounded px-3 py-2" placeholder="e.g. 07XXXXXXXX or 2547XXXXXXXX" />
                     </div>

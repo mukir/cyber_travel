@@ -181,9 +181,9 @@
             </div>
             <div class="text-gray-500">{{ $lead->created_at->format('Y-m-d') }}</div>
           </div>
-          @if($lead->notes && $lead->notes->count())
+          @if($lead->leadNotes && $lead->leadNotes->count())
             <ul class="mt-2 list-disc list-inside text-sm text-gray-700">
-              @foreach($lead->notes as $n)
+              @foreach($lead->leadNotes as $n)
                 <li>{{ $n->content }} <span class="text-gray-400">— {{ $n->created_at->format('Y-m-d H:i') }}</span></li>
               @endforeach
             </ul>

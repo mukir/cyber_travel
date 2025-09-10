@@ -92,7 +92,7 @@ class AdminClientController extends Controller
             ->whereHas('booking', function($q) use ($client){ $q->where('user_id', $client->id); })
             ->orderByDesc('created_at')
             ->get();
-        $leads = \App\Models\Lead::with(['notes','salesRep'])
+        $leads = \App\Models\Lead::with(['leadNotes','salesRep'])
             ->where('client_id', $client->id)
             ->orderByDesc('created_at')
             ->get();

@@ -21,6 +21,6 @@ class Lead extends Model
 
     public function salesRep(): BelongsTo { return $this->belongsTo(User::class, 'sales_rep_id'); }
     public function client(): BelongsTo { return $this->belongsTo(User::class, 'client_id'); }
-    public function notes(): HasMany { return $this->hasMany(LeadNote::class); }
+    // Renamed to avoid collision with 'notes' text attribute on the leads table
+    public function leadNotes(): HasMany { return $this->hasMany(LeadNote::class); }
 }
-
