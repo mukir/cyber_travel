@@ -133,6 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Staff management
         Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff.index');
+        Route::post('/staff', [AdminStaffController::class, 'store'])->name('staff.store');
         Route::post('/staff/{staff}/toggle', [AdminStaffController::class, 'toggle'])->name('staff.toggle');
 
         // Jobs management
