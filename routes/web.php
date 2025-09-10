@@ -162,6 +162,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Staff role changes
         Route::post('/staff/{staff}/make-reception', [AdminStaffController::class, 'makeReception'])->name('staff.makeReception');
+        Route::post('/staff/{staff}/make-staff', [AdminStaffController::class, 'makeStaff'])->name('staff.makeStaff');
+
+        // Documentation
+        Route::get('/docs', [\App\Http\Controllers\AdminDocsController::class, 'index'])->name('docs');
+        Route::get('/docs.pdf', [\App\Http\Controllers\AdminDocsController::class, 'pdf'])->name('docs.pdf');
         // Sales targets management
         Route::resource('targets', \App\Http\Controllers\AdminTargetController::class)->except(['show'])->names('targets');
         // Job packages (minimal inline management)

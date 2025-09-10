@@ -64,6 +64,7 @@
                             <x-dropdown-link :href="route('admin.document_types.index')">{{ __('Document Types') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.countries.index')">{{ __('Countries') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.payouts.index')">{{ __('Payouts') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.docs')">{{ __('Documentation') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.communications')">{{ __('Communication') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.logs')">{{ __('Logs') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.notes')">{{ __('Notes') }}</x-dropdown-link>
@@ -156,6 +157,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.payouts.index')" :active="request()->routeIs('admin.payouts.*')">
                 {{ __('Payouts') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.docs')" :active="request()->routeIs('admin.docs')">
+                {{ __('Documentation') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.countries.index')" :active="request()->routeIs('admin.countries.*')">
                 {{ __('Countries') }}
