@@ -92,8 +92,9 @@ class AdminPaymentController extends Controller
         $rows = $q->orderBy('created_at')->get();
 
         $out = fopen('php://temp', 'w+');
-        fputcsv($out, ['Date','Booking','Client','Method','Status','Amount','Reference']);
+        fputcsv($out, ['Date','Booking','Client','Method','Status','Amount','Outstanding','Reference']);
         foreach ($rows as $p) {
+            $outstanding = $p->booking ? max(((float)$p->booking->total_amount) - ((float)$p->booking->amount_paid), 0) : 0;
             fputcsv($out, [
                 $p->created_at->format('Y-m-d H:i'),
                 'BK'.$p->booking_id,
@@ -101,6 +102,7 @@ class AdminPaymentController extends Controller
                 $p->method,
                 $p->status,
                 number_format($p->amount, 2),
+                number_format($outstanding, 2),
                 $p->receipt_number ?: $p->reference,
             ]);
         }

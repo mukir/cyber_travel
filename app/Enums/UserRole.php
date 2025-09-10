@@ -7,4 +7,5 @@ enum UserRole: string
     case Admin  = 'admin';
     case Client = 'client';
     case Staff  = 'staff';
+    case Reception = 'reception';
 }

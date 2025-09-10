@@ -63,11 +63,19 @@
                             <x-dropdown-link :href="route('admin.service_categories.index')">{{ __('Service Categories') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.document_types.index')">{{ __('Document Types') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.countries.index')">{{ __('Countries') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.payouts.index')">{{ __('Payouts') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.communications')">{{ __('Communication') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.logs')">{{ __('Logs') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.notes')">{{ __('Notes') }}</x-dropdown-link>
                         @endif
 
+                        @if(method_exists(Auth::user(), 'is_reception') && Auth::user()->is_reception())
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <div class="px-4 py-2 text-xs text-gray-400">Reception</div>
+                            <x-dropdown-link :href="route('reception.dashboard')">{{ __('Reception Dashboard') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('reception.clients')">{{ __('Client Status') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('reception.visitors')">{{ __('Visitors Book') }}</x-dropdown-link>
+                        @endif
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -146,6 +154,9 @@
             <x-responsive-nav-link :href="route('admin.services.index')" :active="request()->routeIs('admin.services.*')">
                 {{ __('Services') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.payouts.index')" :active="request()->routeIs('admin.payouts.*')">
+                {{ __('Payouts') }}
+            </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.countries.index')" :active="request()->routeIs('admin.countries.*')">
                 {{ __('Countries') }}
             </x-responsive-nav-link>
@@ -176,6 +187,17 @@
 
             @endif
 
+            @if(method_exists(Auth::user(), 'is_reception') && Auth::user()->is_reception())
+            <x-responsive-nav-link :href="route('reception.dashboard')" :active="request()->routeIs('reception.dashboard')">
+                {{ __('Reception Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('reception.clients')" :active="request()->routeIs('reception.clients')">
+                {{ __('Client Status') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('reception.visitors')" :active="request()->routeIs('reception.visitors')">
+                {{ __('Visitors Book') }}
+            </x-responsive-nav-link>
+            @endif
             @if(Auth::user()->is_staff())
 
             <x-responsive-nav-link :href="route('staff.dashboard')" :active="request()->routeIs('staff.dashboard')">

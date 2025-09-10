@@ -21,6 +21,9 @@
                     <x-nav-link :href="route('admin.countries.index')" :active="request()->routeIs('admin.countries.*')">
                         {{ __('Countries') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('admin.payouts.index')" :active="request()->routeIs('admin.payouts.*')">
+                        {{ __('Payouts') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('admin.staff.index')" :active="request()->routeIs('admin.staff.*')">
                         {{ __('Staff') }}
                     </x-nav-link>

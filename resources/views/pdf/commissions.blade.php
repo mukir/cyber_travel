@@ -23,6 +23,8 @@
                 <th>Client</th>
                 <th>Method</th>
                 <th>Amount</th>
+                <th>Outstanding</th>
+                <th>Type</th>
                 <th>Rate %</th>
                 <th>Commission</th>
             </tr>
@@ -35,16 +37,17 @@
                     <td>{{ $r['client'] }}</td>
                     <td>{{ $r['method'] }}</td>
                     <td>{{ $r['amount'] }}</td>
+                    <td>{{ $r['outstanding'] ?? '0.00' }}</td>
+                    <td>{{ $r['type'] ?? '' }}</td>
                     <td>{{ $r['rate'] }}</td>
                     <td>{{ $r['commission'] }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7">No records found.</td>
+                    <td colspan="9">No records found.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 </body>
 </html>
-

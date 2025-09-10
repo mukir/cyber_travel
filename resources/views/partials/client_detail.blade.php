@@ -119,7 +119,7 @@
           <th class="px-3 py-2">Status</th>
           <th class="px-3 py-2">Total</th>
           <th class="px-3 py-2">Paid</th>
-          <th class="px-3 py-2">Balance</th>
+          <th class="px-3 py-2">Outstanding</th>
         </tr>
       </thead>
       <tbody>
@@ -197,4 +197,3 @@
     </div>
   </div>
 </div>
-

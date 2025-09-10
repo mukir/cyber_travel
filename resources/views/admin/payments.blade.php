@@ -54,6 +54,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
             </tr>
           </thead>
@@ -74,11 +75,13 @@
                   <span class="px-2 py-1 text-xs rounded {{ $badge }}">{{ ucfirst($p->status) }}</span>
                 </td>
                 <td class="px-6 py-4 text-sm text-right font-medium">{{ number_format($p->amount, 2) }}</td>
+                @php($outstanding = $p->booking ? max(((float)$p->booking->total_amount) - ((float)$p->booking->amount_paid), 0) : 0)
+                <td class="px-6 py-4 text-sm text-right">{{ number_format($outstanding, 2) }} {{ $p->booking?->currency }}</td>
                 <td class="px-6 py-4 text-sm text-gray-700">{{ $p->receipt_number ?? $p->reference }}</td>
               </tr>
             @empty
               <tr>
-                <td colspan="7" class="px-6 py-6 text-sm text-gray-500">No payments found.</td>
+                <td colspan="8" class="px-6 py-6 text-sm text-gray-500">No payments found.</td>
               </tr>
             @endforelse
           </tbody>

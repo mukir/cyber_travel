@@ -115,3 +115,111 @@ Artisan::command('sales:weekly-passport-bonus', function (?string $weekStart = n
         $this->info("Awarded KES {$amount} bonus to {$staff->name} for {$count} passports in week starting {$start->toDateString()}");
     }
 })->purpose('Award weekly passport bonus to staff');
+
+// Monthly commission payout: run on the 15th to pay previous month's commissions
+Artisan::command('commissions:payout {--date=} {--dry}', function () {
+    $dateOpt = (string) ($this->option('date') ?? '');
+    $runDate = $dateOpt ? now()->parse($dateOpt) : now();
+    $payoutDay = (int) \App\Helpers\Settings::get('commission.payout.day', 15);
+
+    $start = (clone $runDate)->subMonthNoOverflow()->startOfMonth();
+    $end   = (clone $runDate)->subMonthNoOverflow()->endOfMonth();
+    $batch = $start->format('Y-m');
+
+    // Ensure monthly retainer commissions exist for staff who hit targets ending in the month
+    $retainers = [];
+    try {
+        $retAmount = (float) \App\Helpers\Settings::get('commission.retainer.amount', 30000);
+        $targets = \App\Models\SalesTarget::whereBetween('end_date', [$start, $end])->get();
+        foreach ($targets as $t) {
+            // One retainer per staff per month
+            $exists = \App\Models\Commission::where('type', 'retainer')
+                ->where('staff_id', $t->staff_id)
+                ->whereBetween('created_at', [$start, $end])
+                ->exists();
+            if ($exists) continue;
+
+            $fromT = $t->start_date?->startOfDay() ?: $start;
+            $toT   = $t->end_date?->endOfDay() ?: $end;
+            $achieved = (float) \App\Models\Payment::where('status','paid')
+                ->whereBetween('created_at', [$fromT, $toT])
+                ->whereHas('booking', fn($q) => $q->where('referred_by_id', $t->staff_id))
+                ->sum('amount');
+            if ($achieved + 0.01 < (float) $t->target_amount) continue;
+
+            $pay = \App\Models\Payment::where('status','paid')
+                ->whereBetween('created_at', [$fromT, $toT])
+                ->whereHas('booking', fn($q) => $q->where('referred_by_id', $t->staff_id))
+                ->latest('created_at')->first();
+            if (!$pay) continue;
+
+            $c = \App\Models\Commission::create([
+                'payment_id' => $pay->id,
+                'staff_id' => $t->staff_id,
+                'rate' => 0,
+                'amount' => $retAmount,
+                'type' => 'retainer',
+            ]);
+            $c->created_at = $toT; $c->updated_at = $toT; $c->save();
+            $staffName = optional(\App\Models\User::find($t->staff_id))->name ?: ('#'.$t->staff_id);
+            $retainers[] = [$staffName, $retAmount];
+        }
+    } catch (\Throwable $e) {}
+
+    $eligible = \App\Models\Commission::whereNull('paid_at')
+        ->whereBetween('created_at', [$start, $end])
+        ->get()
+        ->groupBy('staff_id');
+
+    if ($eligible->isEmpty()) {
+        $this->info("No unpaid commissions for {$batch}.");
+        return 0;
+    }
+
+    $this->info("Preparing payout for {$batch} (records: ".$eligible->flatten()->count().").");
+    foreach ($eligible as $staffId => $rows) {
+        $sum = (float) $rows->sum('amount');
+        $name = optional(\App\Models\User::find($staffId))->name ?: ('#'.$staffId);
+        $this->line(str_pad($name, 24).' KES '.number_format($sum, 2));
+    }
+
+    if ($this->option('dry')) {
+        $this->warn('Dry-run only. No changes applied.');
+        return 0;
+    }
+
+    $now = now();
+    $totalAmount = (float) \App\Models\Commission::whereNull('paid_at')->whereBetween('created_at', [$start, $end])->sum('amount');
+    $totalCount = (int) \App\Models\Commission::whereNull('paid_at')->whereBetween('created_at', [$start, $end])->count();
+    $batchRow = \App\Models\PayoutBatch::create([
+        'month' => $batch,
+        'total_amount' => $totalAmount,
+        'total_count' => $totalCount,
+        'processed_by' => null,
+        'emailed' => false,
+    ]);
+
+    \App\Models\Commission::whereNull('paid_at')
+        ->whereBetween('created_at', [$start, $end])
+        ->update(['paid_at' => $now, 'payout_month' => $batch, 'payout_batch_id' => $batchRow->id]);
+
+    $this->info('Payout marked paid_at='.$now->toDateTimeString().' for month '.$batch.' (batch #'.$batchRow->id.').');
+
+    // Email admin retainer summary when applicable
+    if (!empty($retainers)) {
+        try {
+            $adminEmail = \App\Helpers\Settings::get('company.admin_email');
+            if (!$adminEmail) {
+                $adminEmail = optional(\App\Models\User::where('role','admin')->first())->email;
+            }
+            if ($adminEmail) {
+                $lines = array_map(fn($r) => ($r[0].' - KES '.number_format($r[1], 2)), $retainers);
+                \Illuminate\Support\Facades\Mail::raw(
+                    "Retainers created for {$batch}:\n\n".implode("\n", $lines),
+                    function ($m) use ($adminEmail, $batch) { $m->to($adminEmail)->subject('Retainers Created - '.$batch); }
+                );
+            }
+        } catch (\Throwable $e) {}
+    }
+    return 0;
+})->purpose('Mark commissions as paid for the previous month (run on 15th)');

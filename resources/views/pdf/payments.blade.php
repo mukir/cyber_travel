@@ -22,6 +22,7 @@
         <th>Method</th>
         <th>Status</th>
         <th class="right">Amount</th>
+        <th class="right">Outstanding</th>
         <th>Reference</th>
       </tr>
     </thead>
@@ -34,6 +35,8 @@
           <td class="capitalize">{{ $p->method }}</td>
           <td class="capitalize">{{ $p->status }}</td>
           <td class="right">{{ number_format($p->amount, 2) }}</td>
+          <?php $out = $p->booking ? max(((float)$p->booking->total_amount) - ((float)$p->booking->amount_paid), 0) : 0; ?>
+          <td class="right">{{ number_format($out, 2) }} {{ $p->booking?->currency }}</td>
           <td>{{ $p->receipt_number ?? $p->reference }}</td>
         </tr>
       @endforeach
@@ -41,4 +44,3 @@
   </table>
 </body>
 </html>
-

@@ -55,4 +55,9 @@ class User extends Authenticatable
     {
         return $this->role === UserRole::Staff || $this->role === 'staff';
     }
+
+    public function is_reception(): bool
+    {
+        return $this->role === UserRole::Reception || $this->role === 'reception';
+    }
 }
