@@ -153,7 +153,7 @@ class AdminStaffController extends Controller
 
     public function show(User $staff)
     {
-        if (!$staff || ($staff->role !== UserRole::Staff && $staff->role !== 'staff')) {
+        if (!$staff || !in_array($staff->role, [UserRole::Staff, UserRole::Reception, 'staff', 'reception'], true)) {
             abort(404);
         }
 
