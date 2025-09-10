@@ -29,14 +29,6 @@
           <label class="block text-gray-600">To</label>
           <input type="date" name="to" value="{{ request('to') }}" class="mt-1 rounded border p-2" />
         </div>
-        <div>
-          <label class="block text-gray-600">Follow-up From</label>
-          <input type="date" name="follow_from" value="{{ request('follow_from') }}" class="mt-1 rounded border p-2" />
-        </div>
-        <div>
-          <label class="block text-gray-600">Follow-up To</label>
-          <input type="date" name="follow_to" value="{{ request('follow_to') }}" class="mt-1 rounded border p-2" />
-        </div>
         <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold">Filter</button>
       </form>
     </div>
@@ -135,3 +127,4 @@
     </div>
   </div>
 </x-app-layout>
+

@@ -21,22 +21,6 @@
             @endforeach
           </select>
         </div>
-        <div>
-          <label class="block text-gray-600">From</label>
-          <input type="date" name="from" value="{{ request('from') }}" class="mt-1 rounded border p-2" />
-        </div>
-        <div>
-          <label class="block text-gray-600">To</label>
-          <input type="date" name="to" value="{{ request('to') }}" class="mt-1 rounded border p-2" />
-        </div>
-        <div>
-          <label class="block text-gray-600">Follow-up From</label>
-          <input type="date" name="follow_from" value="{{ request('follow_from') }}" class="mt-1 rounded border p-2" />
-        </div>
-        <div>
-          <label class="block text-gray-600">Follow-up To</label>
-          <input type="date" name="follow_to" value="{{ request('follow_to') }}" class="mt-1 rounded border p-2" />
-        </div>
         <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold">Filter</button>
       </form>
     </div>
@@ -83,7 +67,7 @@
           <tbody class="bg-white divide-y divide-gray-200">
             @forelse(($leads ?? []) as $lead)
               <tr>
-                <td class="px-6 py-4 text-sm text-gray-900"><a href="{{ route('staff.leads.show', $lead->id) }}" class="text-indigo-700 hover:underline">{{ $lead->name }}</a>
+                <td class="px-6 py-4 text-sm text-gray-900">{{ $lead->name }}
                   @php($meta = json_decode($lead->notes, true))
                   @if(is_array($meta) && isset($meta['service_type']))
                     <div class="mt-1 text-xs text-gray-600">
@@ -135,3 +119,4 @@
     </div>
   </div>
 </x-app-layout>
+

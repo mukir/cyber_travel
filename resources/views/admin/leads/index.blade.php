@@ -35,6 +35,22 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div>
+                            <label class="block text-gray-600">From</label>
+                            <input type="date" name="from" value="{{ request('from') }}" class="mt-1 rounded border p-2" />
+                        </div>
+                        <div>
+                            <label class="block text-gray-600">To</label>
+                            <input type="date" name="to" value="{{ request('to') }}" class="mt-1 rounded border p-2" />
+                        </div>
+                        <div>
+                            <label class="block text-gray-600">Follow-up From</label>
+                            <input type="date" name="follow_from" value="{{ request('follow_from') }}" class="mt-1 rounded border p-2" />
+                        </div>
+                        <div>
+                            <label class="block text-gray-600">Follow-up To</label>
+                            <input type="date" name="follow_to" value="{{ request('follow_to') }}" class="mt-1 rounded border p-2" />
+                        </div>
                         <button class="rounded bg-slate-700 px-4 py-2 text-white font-semibold">Filter</button>
                     </form>
                     <a href="{{ route('admin.leads.create') }}" class="rounded bg-emerald-600 px-4 py-2 text-white text-sm font-semibold">Create Lead</a>
@@ -85,7 +101,8 @@
                                 <td class="px-6 py-3 capitalize">{{ $lead->stage }} / {{ $lead->status }}</td>
                                 <td class="px-6 py-3">{{ $lead->next_follow_up ? $lead->next_follow_up->format('Y-m-d') : '-' }}</td>
                                 <td class="px-6 py-3 text-right">
-                                    <a href="{{ route('admin.leads.edit', $lead) }}" class="underline">Edit</a>
+                                    <a href="{{ route('admin.leads.show', $lead) }}" class="underline">View</a>
+                                    <a href="{{ route('admin.leads.edit', $lead) }}" class="underline ml-2">Edit</a>
                                     <form action="{{ route('admin.leads.destroy', $lead) }}" method="POST" class="inline" onsubmit="return confirm('Delete this lead?')">
                                         @csrf @method('DELETE')
                                         <button class="underline text-red-600 ml-2">Delete</button>

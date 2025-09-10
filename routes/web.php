@@ -134,12 +134,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Staff management
         Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff.index');
         Route::post('/staff', [AdminStaffController::class, 'store'])->name('staff.store');
+        Route::get('/staff/{staff}', [AdminStaffController::class, 'show'])->name('staff.show');
+        Route::get('/staff/{staff}/edit', [AdminStaffController::class, 'edit'])->name('staff.edit');
+        Route::put('/staff/{staff}', [AdminStaffController::class, 'update'])->name('staff.update');
+        Route::delete('/staff/{staff}', [AdminStaffController::class, 'destroy'])->name('staff.destroy');
+        Route::post('/staff/{staff}/invite', [AdminStaffController::class, 'invite'])->name('staff.invite');
+        Route::post('/staff/{staff}/promote', [AdminStaffController::class, 'promote'])->name('staff.promote');
         Route::post('/staff/{staff}/toggle', [AdminStaffController::class, 'toggle'])->name('staff.toggle');
 
         // Jobs management
         Route::resource('jobs', \App\Http\Controllers\AdminJobController::class)->except(['show']);
         // Leads management
         Route::resource('leads', \App\Http\Controllers\AdminLeadController::class)->except(['show'])->names('leads');
+        Route::get('/leads/{lead}', [\App\Http\Controllers\AdminLeadController::class, 'show'])->name('leads.show');
+        Route::post('/leads/{lead}/note', [\App\Http\Controllers\AdminLeadController::class, 'saveNote'])->name('leads.note');
         // Sales targets management
         Route::resource('targets', \App\Http\Controllers\AdminTargetController::class)->except(['show'])->names('targets');
         // Job packages (minimal inline management)
@@ -151,6 +159,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('staff')->prefix('staff')->name('staff.')->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
         Route::match(['get','post'],'/leads', [StaffController::class, 'leads'])->name('leads');
+        Route::get('/leads/{lead}', [StaffController::class, 'leadShow'])->name('leads.show');
         Route::get('/notes', [StaffController::class, 'notes'])->name('notes');
         Route::get('/reminders', [StaffController::class, 'reminders'])->name('reminders');
         Route::post('/leads/{lead}/note', [StaffController::class, 'saveLeadNote'])->name('leads.note');

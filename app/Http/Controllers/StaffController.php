@@ -58,6 +58,10 @@ class StaffController extends Controller
         $q = \App\Models\Lead::where('sales_rep_id', $user->id)->orderByDesc('created_at');
         if (request('stage')) $q->where('stage', request('stage'));
         if (request('status')) $q->where('status', request('status'));
+        if (request('from')) $q->whereDate('created_at', '>=', now()->parse(request('from'))->startOfDay());
+        if (request('to')) $q->whereDate('created_at', '<=', now()->parse(request('to'))->endOfDay());
+        if (request('follow_from')) $q->whereDate('next_follow_up', '>=', now()->parse(request('follow_from'))->startOfDay());
+        if (request('follow_to')) $q->whereDate('next_follow_up', '<=', now()->parse(request('follow_to'))->endOfDay());
 
         if (request()->isMethod('post')) {
             $data = request()->validate([
@@ -73,6 +77,14 @@ class StaffController extends Controller
 
         $leads = $q->paginate(15)->appends(request()->query());
         return view('staff.leads', compact('leads'));
+    }
+
+    public function leadShow(\App\Models\Lead $lead)
+    {
+        $user = auth()->user();
+        abort_unless($lead && $lead->sales_rep_id === $user->id, 404);
+        $lead->load(['notes' => function($q){ $q->orderByDesc('created_at'); }]);
+        return view('staff.lead_show', compact('lead'));
     }
 
     public function notes()
