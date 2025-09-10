@@ -27,7 +27,7 @@ class AdminLeadController extends Controller
 
     public function show(Lead $lead)
     {
-        $lead->load(['salesRep','client','notes' => function($q){ $q->orderByDesc('created_at'); }]);
+        $lead->load(['salesRep','client','leadNotes' => function($q){ $q->orderByDesc('created_at'); }]);
         return view('admin.leads.show', compact('lead'));
     }
 

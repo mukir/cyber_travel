@@ -83,7 +83,7 @@ class StaffController extends Controller
     {
         $user = auth()->user();
         abort_unless($lead && $lead->sales_rep_id === $user->id, 404);
-        $lead->load(['notes' => function($q){ $q->orderByDesc('created_at'); }]);
+        $lead->load(['leadNotes' => function($q){ $q->orderByDesc('created_at'); }]);
         return view('staff.lead_show', compact('lead'));
     }
 
@@ -291,7 +291,7 @@ class StaffController extends Controller
         $payments = \App\Models\Payment::with('booking')
             ->whereHas('booking', fn($q) => $q->where('user_id', $client->id))
             ->orderByDesc('created_at')->get();
-        $leads = \App\Models\Lead::with(['notes','salesRep'])
+        $leads = \App\Models\Lead::with(['leadNotes','salesRep'])
             ->where('client_id', $client->id)
             ->where('sales_rep_id', $user->id)
             ->orderByDesc('created_at')->get();

@@ -66,7 +66,7 @@
                     <button class="rounded bg-slate-700 px-4 py-2 text-white">Save Note</button>
                 </form>
                 <div class="space-y-3">
-                    @forelse($lead->notes as $n)
+                    @forelse($lead->leadNotes as $n)
                         <div class="border rounded p-3 text-sm">
                             <div class="flex justify-between">
                                 <div>{{ optional($n->salesRep)->name ?: '—' }}</div>

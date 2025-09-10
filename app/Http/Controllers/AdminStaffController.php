@@ -121,6 +121,7 @@ class AdminStaffController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'phone' => ['nullable', 'string', 'max:30'],
+            'role' => ['nullable', 'in:staff,reception'],
         ]);
 
         $staff->name = $validated['name'];
@@ -140,6 +141,10 @@ class AdminStaffController extends Controller
         if (!empty($validated['password'])) {
             // hashed by cast
             $staff->password = $validated['password'];
+        }
+        if (!empty($validated['role'])) {
+            // allow switching between staff and reception
+            $staff->role = $validated['role'];
         }
         $staff->save();
 
