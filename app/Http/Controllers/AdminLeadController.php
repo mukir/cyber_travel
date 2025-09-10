@@ -15,10 +15,45 @@ class AdminLeadController extends Controller
         if ($request->filled('stage')) { $q->where('stage', $request->string('stage')); }
         if ($request->filled('status')) { $q->where('status', $request->string('status')); }
         if ($request->filled('staff_id')) { $q->where('sales_rep_id', $request->integer('staff_id')); }
+        if ($request->filled('from')) { $q->whereDate('created_at', '>=', now()->parse($request->string('from'))->startOfDay()); }
+        if ($request->filled('to')) { $q->whereDate('created_at', '<=', now()->parse($request->string('to'))->endOfDay()); }
+        if ($request->filled('follow_from')) { $q->whereDate('next_follow_up', '>=', now()->parse($request->string('follow_from'))->startOfDay()); }
+        if ($request->filled('follow_to')) { $q->whereDate('next_follow_up', '<=', now()->parse($request->string('follow_to'))->endOfDay()); }
         $leads = $q->paginate(20)->appends($request->query());
 
         $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
         return view('admin.leads.index', compact('leads','staff'));
+    }
+
+    public function show(Lead $lead)
+    {
+        $lead->load(['salesRep','client','notes' => function($q){ $q->orderByDesc('created_at'); }]);
+        return view('admin.leads.show', compact('lead'));
+    }
+
+    public function saveNote(Request $request, Lead $lead)
+    {
+        $data = $request->validate([
+            'content' => 'required|string',
+            'next_follow_up' => 'nullable|date',
+            'stage' => 'nullable|in:new,contacted,qualified,won,lost',
+            'status' => 'nullable|in:open,closed',
+        ]);
+
+        \App\Models\LeadNote::create([
+            'lead_id' => $lead->id,
+            'sales_rep_id' => auth()->id(),
+            'content' => $data['content'],
+            'next_follow_up' => $data['next_follow_up'] ?? null,
+        ]);
+
+        $lead->update([
+            'next_follow_up' => $data['next_follow_up'] ?? $lead->next_follow_up,
+            'stage' => $data['stage'] ?? $lead->stage,
+            'status' => $data['status'] ?? $lead->status,
+        ]);
+
+        return back()->with('success', 'Note saved');
     }
 
     public function create()
