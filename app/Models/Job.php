@@ -15,7 +15,7 @@ class Job extends Model
     protected $table = 'service_jobs';
 
     protected $fillable = [
-        'name', 'slug', 'description', 'base_price', 'active',
+        'name', 'slug', 'description', 'country', 'region', 'base_price', 'active',
     ];
 
     public function packages(): HasMany

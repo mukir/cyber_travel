@@ -27,6 +27,36 @@
           </div>
         </form>
 
+        <h3 class="text-lg font-semibold">Commissions</h3>
+        <form action="{{ route('admin.settings.update') }}" method="POST" class="mt-4 grid gap-4">
+          @csrf
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-gray-700">Europe Fixed (KES)</label>
+              <input type="number" step="1" min="0" name="commission.region.europe" value="{{ old('commission.region.europe', $commissions['europe'] ?? 10000) }}" class="mt-1 w-full rounded border p-2" />
+              @error('commission.region.europe')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+            </div>
+            <div>
+              <label class="block text-sm text-gray-700">Gulf Fixed (KES)</label>
+              <input type="number" step="1" min="0" name="commission.region.gulf" value="{{ old('commission.region.gulf', $commissions['gulf'] ?? 5000) }}" class="mt-1 w-full rounded border p-2" />
+              @error('commission.region.gulf')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+            </div>
+            <div>
+              <label class="block text-sm text-gray-700">Americas Fixed (KES)</label>
+              <input type="number" step="1" min="0" name="commission.region.americas" value="{{ old('commission.region.americas', $commissions['americas'] ?? 10000) }}" class="mt-1 w-full rounded border p-2" />
+              @error('commission.region.americas')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+            </div>
+            <div>
+              <label class="block text-sm text-gray-700">Weekly Passport Bonus (KES per 3)</label>
+              <input type="number" step="1" min="0" name="commission.bonus.passport_weekly" value="{{ old('commission.bonus.passport_weekly', $commissions['passport_weekly_bonus'] ?? 5000) }}" class="mt-1 w-full rounded border p-2" />
+              @error('commission.bonus.passport_weekly')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+            </div>
+          </div>
+          <div>
+            <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Save Commission Settings</button>
+          </div>
+        </form>
+
         <h3 class="text-lg font-semibold">General</h3>
         <form action="{{ route('admin.settings.update') }}" method="POST" class="mt-4 grid gap-4">
           @csrf
