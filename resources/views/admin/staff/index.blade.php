@@ -92,6 +92,7 @@
                         <tr class="bg-gray-100 text-left">
                             <th class="px-4 py-2">Name</th>
                             <th class="px-4 py-2">Email</th>
+                            <th class="px-4 py-2">Role</th>
                             <th class="px-4 py-2">Active</th>
                             <th class="px-4 py-2">Assigned Clients</th>
                             <th class="px-4 py-2">Open Leads</th>
@@ -106,6 +107,10 @@
                             <tr class="border-t">
                                 <td class="px-4 py-2"><a href="{{ route('admin.staff.show', $user) }}" class="text-indigo-700 hover:underline">{{ $user->name }}</a></td>
                                 <td class="px-4 py-2">{{ $user->email }}</td>
+                                <td class="px-4 py-2">
+                                    @php($roleLabel = (method_exists($user,'is_reception') && $user->is_reception()) ? 'Reception' : 'Staff')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-800">{{ $roleLabel }}</span>
+                                </td>
                                 <td class="px-4 py-2">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs {{ $user->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-700' }}">
                                         {{ $user->is_active ? 'Active' : 'Inactive' }}

@@ -14,26 +14,28 @@ class AdminClientController extends Controller
     public function index(\Illuminate\Http\Request $request)
     {
         $staff = User::where('role', UserRole::Staff)->where('is_active', true)->orderBy('name')->get();
-        $query = User::where('role', UserRole::Client)->orderBy('name');
+        // Join client profiles to allow ordering by latest assignment
+        $query = User::where('role', UserRole::Client)
+            ->leftJoin('client_profiles as cp', 'cp.user_id', '=', 'users.id')
+            ->select('users.*', 'cp.sales_rep_id as cp_sales_rep_id', 'cp.updated_at as cp_updated_at');
         $selectedRep = $request->get('rep');
         $q = trim((string)$request->get('q', ''));
         if ($selectedRep === 'unassigned') {
-            $ids = \App\Models\ClientProfile::whereNull('sales_rep_id')->pluck('user_id');
-            $query->whereIn('id', $ids);
+            $query->whereNull('cp.sales_rep_id');
         } elseif (!empty($selectedRep)) {
-            $ids = \App\Models\ClientProfile::where('sales_rep_id', $selectedRep)->pluck('user_id');
-            $query->whereIn('id', $ids);
+            $query->where('cp.sales_rep_id', $selectedRep);
         }
         if ($q !== '') {
             $digits = preg_replace('/\D+/', '', $q);
-            $phoneIds = \App\Models\ClientProfile::where('phone', 'like', '%'.$digits.'%')->pluck('user_id');
-            $query->where(function($w) use ($q, $phoneIds) {
-                $w->where('name', 'like', '%'.$q.'%')
-                  ->orWhere('email', 'like', '%'.$q.'%')
-                  ->orWhereIn('id', $phoneIds);
+            $query->where(function($w) use ($q, $digits) {
+                $w->where('users.name', 'like', '%'.$q.'%')
+                  ->orWhere('users.email', 'like', '%'.$q.'%')
+                  ->orWhere('cp.phone', 'like', '%'.$digits.'%');
             });
         }
-        $clients = $query->paginate(20)->withQueryString();
+        // Order: latest assignment (client_profiles.updated_at) first, fallback to newest user
+        $clients = $query->orderByDesc('cp_updated_at')->orderByDesc('users.created_at')
+            ->paginate(20)->withQueryString();
         return view('admin.clients', compact('clients','staff','selectedRep','q'));
     }
 
