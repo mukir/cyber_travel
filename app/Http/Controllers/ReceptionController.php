@@ -43,8 +43,17 @@ class ReceptionController extends Controller
             return redirect()->route('reception.visitors')->with('success','Visitor recorded');
         }
 
-        $visitors = \App\Models\Visitor::latest()->paginate(20);
-        return view('reception.visitors', compact('visitors'));
+        $q = trim((string) $request->input('q'));
+        $list = \App\Models\Visitor::query();
+        if ($q !== '') {
+            $list->where(function($w) use ($q) {
+                $w->where('name','like',"%{$q}%")
+                  ->orWhere('national_id','like',"%{$q}%")
+                  ->orWhere('phone','like',"%{$q}%")
+                  ->orWhere('email','like',"%{$q}%");
+            });
+        }
+        $visitors = $list->latest()->paginate(20)->withQueryString();
+        return view('reception.visitors', compact('visitors','q'));
     }
 }
-

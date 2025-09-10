@@ -20,9 +20,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-// Referral capture
+// Referral capture: set cookie and take user to registration page
 Route::get('/r/{code}', function ($code) {
-    return redirect()->route('jobs.index')->withCookie(cookie('ref', $code, 60*24*30));
+    return redirect()->route('register')->withCookie(cookie('ref', $code, 60*24*30));
 })->name('ref');
 
 // Public job list and details

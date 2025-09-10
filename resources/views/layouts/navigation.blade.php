@@ -28,6 +28,7 @@
 @include('layouts.client')
 @include('layouts.admin')
 @include('layouts.staff')
+@include('layouts.reception')
 
                 </div>
             </div>

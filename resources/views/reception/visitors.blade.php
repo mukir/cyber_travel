@@ -47,6 +47,16 @@
       </div>
 
       <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b">
+          <form method="GET" action="{{ route('reception.visitors') }}" class="flex gap-2 items-end text-sm">
+            <div>
+              <label class="block text-gray-600">Search Visitors</label>
+              <input type="text" name="q" value="{{ $q ?? '' }}" class="mt-1 rounded border p-2" placeholder="Name, ID, Phone, Email" />
+            </div>
+            <button class="rounded bg-slate-700 px-4 py-2 text-white font-semibold">Filter</button>
+            @if(!empty($q))<a href="{{ route('reception.visitors') }}" class="px-3 py-2 rounded border">Clear</a>@endif
+          </form>
+        </div>
         <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
             <tr>
@@ -79,4 +89,3 @@
     </div>
   </div>
 </x-app-layout>
-
