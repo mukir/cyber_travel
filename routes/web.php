@@ -134,6 +134,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Staff management
         Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff.index');
         Route::post('/staff', [AdminStaffController::class, 'store'])->name('staff.store');
+        Route::get('/staff/{staff}', [AdminStaffController::class, 'show'])->name('staff.show');
+        Route::get('/staff/{staff}/edit', [AdminStaffController::class, 'edit'])->name('staff.edit');
+        Route::put('/staff/{staff}', [AdminStaffController::class, 'update'])->name('staff.update');
+        Route::delete('/staff/{staff}', [AdminStaffController::class, 'destroy'])->name('staff.destroy');
+        Route::post('/staff/{staff}/invite', [AdminStaffController::class, 'invite'])->name('staff.invite');
+        Route::post('/staff/{staff}/promote', [AdminStaffController::class, 'promote'])->name('staff.promote');
         Route::post('/staff/{staff}/toggle', [AdminStaffController::class, 'toggle'])->name('staff.toggle');
 
         // Jobs management
