@@ -62,6 +62,7 @@
                             <x-dropdown-link :href="route('admin.services.index')">{{ __('Services') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.service_categories.index')">{{ __('Service Categories') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.document_types.index')">{{ __('Document Types') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.countries.index')">{{ __('Countries') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.communications')">{{ __('Communication') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.logs')">{{ __('Logs') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.notes')">{{ __('Notes') }}</x-dropdown-link>
@@ -144,6 +145,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.services.index')" :active="request()->routeIs('admin.services.*')">
                 {{ __('Services') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.countries.index')" :active="request()->routeIs('admin.countries.*')">
+                {{ __('Countries') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.sales')" :active="request()->routeIs('admin.sales')">
                 {{ __('Sales') }}
