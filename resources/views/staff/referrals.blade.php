@@ -31,6 +31,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
@@ -45,11 +46,13 @@
                                 <td class="px-6 py-3">{{ optional($b->job)->name }} @if($b->package) <span class="text-xs text-gray-500">/ {{ $b->package->name }}</span> @endif</td>
                                 <td class="px-6 py-3">{{ number_format($b->total_amount, 2) }} {{ $b->currency }}</td>
                                 <td class="px-6 py-3">{{ number_format($b->amount_paid, 2) }} {{ $b->currency }}</td>
+                                @php($outstanding = max(((float)$b->total_amount) - ((float)$b->amount_paid), 0))
+                                <td class="px-6 py-3">{{ number_format($outstanding, 2) }} {{ $b->currency }}</td>
                                 <td class="px-6 py-3 capitalize">{{ $b->payment_status ?: '-' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 text-gray-500">No referred applications yet.</td>
+                                <td colspan="7" class="px-6 py-4 text-gray-500">No referred applications yet.</td>
                             </tr>
                         @endforelse
                     </tbody>

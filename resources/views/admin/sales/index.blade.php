@@ -15,6 +15,7 @@
                             <th class="px-4 py-2">Client</th>
                             <th class="px-4 py-2">Staff</th>
                             <th class="px-4 py-2">Amount</th>
+                            <th class="px-4 py-2">Outstanding</th>
                             <th class="px-4 py-2">Commission</th>
                             <th class="px-4 py-2">Status</th>
                             <th class="px-4 py-2">Actions</th>
@@ -26,6 +27,8 @@
                                 <td class="border px-4 py-2">{{ $sale->client->name }}</td>
                                 <td class="border px-4 py-2">{{ $sale->staff->name }}</td>
                                 <td class="border px-4 py-2">{{ $sale->amount }}</td>
+                                @php($out = max(((float)optional($sale->booking)->total_amount) - ((float)optional($sale->booking)->amount_paid), 0))
+                                <td class="border px-4 py-2">{{ number_format($out, 2) }} {{ optional($sale->booking)->currency }}</td>
                                 <td class="border px-4 py-2">{{ $sale->commission }}</td>
                                 <td class="border px-4 py-2">{{ $sale->status }}</td>
                                 <td class="border px-4 py-2">

@@ -21,7 +21,7 @@
               <th class="px-4 py-2 text-left">Email</th>
               <th class="px-4 py-2 text-left">Phone</th>
               <th class="px-4 py-2 text-left">Latest Application</th>
-              <th class="px-4 py-2 text-left">Balance</th>
+              <th class="px-4 py-2 text-left">Outstanding</th>
               <th class="px-4 py-2 text-left">Docs Missing</th>
               <th class="px-4 py-2"></th>
             </tr>

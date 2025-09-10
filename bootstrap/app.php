@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'admin'    => \App\Http\Middleware\AdminMiddleware::class,
             'staff'    => \App\Http\Middleware\StaffMiddleware::class,
+            'reception'=> \App\Http\Middleware\ReceptionMiddleware::class,
         ]);
 
         // Exempt external callbacks from CSRF validation

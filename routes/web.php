@@ -41,6 +41,9 @@ Route::get('/dashboard', function () {
     if ($user && method_exists($user, 'is_staff') && $user->is_staff()) {
         return redirect()->route('staff.dashboard');
     }
+    if ($user && method_exists($user, 'is_reception') && $user->is_reception()) {
+        return redirect()->route('reception.dashboard');
+    }
     return redirect()->route('client.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -151,6 +154,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Countries management
         Route::resource('countries', \App\Http\Controllers\AdminCountryController::class)->names('countries')->except(['show']);
+
+        // Payouts
+        Route::get('/payouts', [\App\Http\Controllers\AdminPayoutController::class, 'index'])->name('payouts.index');
+        Route::get('/payouts/export.csv', [\App\Http\Controllers\AdminPayoutController::class, 'exportCsv'])->name('payouts.export.csv');
+        Route::post('/payouts/mark', [\App\Http\Controllers\AdminPayoutController::class, 'markPaid'])->name('payouts.mark');
+
+        // Staff role changes
+        Route::post('/staff/{staff}/make-reception', [AdminStaffController::class, 'makeReception'])->name('staff.makeReception');
         // Sales targets management
         Route::resource('targets', \App\Http\Controllers\AdminTargetController::class)->except(['show'])->names('targets');
         // Job packages (minimal inline management)
@@ -176,6 +187,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/referrals', [StaffController::class, 'referrals'])->name('referrals');
         Route::get('/clients', [StaffController::class, 'clients'])->name('clients');
         Route::get('/clients/{client}', [StaffController::class, 'showClient'])->name('clients.show');
+    });
+
+    Route::middleware('reception')->prefix('reception')->name('reception.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\ReceptionController::class, 'dashboard'])->name('dashboard');
+        Route::get('/clients', [\App\Http\Controllers\ReceptionController::class, 'clients'])->name('clients');
+        Route::match(['get','post'],'/visitors', [\App\Http\Controllers\ReceptionController::class, 'visitors'])->name('visitors');
     });
 });
 

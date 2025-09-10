@@ -46,6 +46,7 @@ class AdminSettingsController extends Controller
         ];
         $company = [
             'whatsapp_number' => SettingsHelper::get('company.whatsapp_number', ''),
+            'admin_email' => SettingsHelper::get('company.admin_email', ''),
         ];
 
         $commissions = [
@@ -53,6 +54,8 @@ class AdminSettingsController extends Controller
             'gulf' => (float) SettingsHelper::get('commission.region.gulf', 5000),
             'americas' => (float) SettingsHelper::get('commission.region.americas', 10000),
             'passport_weekly_bonus' => (float) SettingsHelper::get('commission.bonus.passport_weekly', 5000),
+            'payout_day' => (int) SettingsHelper::get('commission.payout.day', 15),
+            'retainer_amount' => (float) SettingsHelper::get('commission.retainer.amount', 30000),
         ];
 
         return view('admin.settings', compact('defaultCurrency', 'usdToKes', 'currencies', 'safaricom', 'paypal', 'paymentPlan', 'company', 'commissions'));
@@ -90,11 +93,14 @@ class AdminSettingsController extends Controller
             'paypal.base_url'      => ['nullable', 'url'],
             // Company
             'company.whatsapp_number' => ['nullable', 'string', 'max:30'],
+            'company.admin_email' => ['nullable', 'email'],
             // Commissions
             'commission.region.europe' => ['nullable','numeric','min:0'],
             'commission.region.gulf' => ['nullable','numeric','min:0'],
             'commission.region.americas' => ['nullable','numeric','min:0'],
             'commission.bonus.passport_weekly' => ['nullable','numeric','min:0'],
+            'commission.payout.day' => ['nullable','integer','min:1','max:28'],
+            'commission.retainer.amount' => ['nullable','numeric','min:0'],
         ]);
 
         SettingsHelper::set('default_currency', strtoupper(trim($data['default_currency'])));

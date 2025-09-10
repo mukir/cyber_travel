@@ -30,6 +30,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
                         </tr>
                     </thead>
@@ -42,11 +43,19 @@
                                 <td class="px-6 py-3">{{ optional($p->booking)->customer_name }}</td>
                                 <td class="px-6 py-3 uppercase">{{ $p->method }}</td>
                                 <td class="px-6 py-3">{{ number_format($p->amount, 2) }}</td>
+                                <?php $out = max(((float)optional($p->booking)->total_amount) - ((float)optional($p->booking)->amount_paid), 0); ?>
+                                <td class="px-6 py-3">{{ number_format($out, 2) }} {{ optional($p->booking)->currency }}</td>
                                 <td class="px-6 py-3">
                                     @if($comm)
                                         {{ number_format($comm->amount, 2) }}
                                         <span class="text-xs text-gray-500">
-                                            {{ $comm->type === 'region_fixed' ? 'fixed' : (number_format($comm->rate, 2).'%' ) }}
+                                            @if($comm->type === 'retainer')
+                                                retainer
+                                            @elseif($comm->type === 'region_fixed')
+                                                fixed
+                                            @else
+                                                {{ number_format($comm->rate, 2) }}%
+                                            @endif
                                         </span>
                                     @else
                                         <span class="text-gray-400">—</span>
@@ -55,7 +64,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 text-gray-500">No payments yet.</td>
+                                <td colspan="7" class="px-6 py-4 text-gray-500">No payments yet.</td>
                             </tr>
                         @endforelse
                     </tbody>

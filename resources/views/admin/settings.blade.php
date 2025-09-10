@@ -23,6 +23,14 @@
             <p class="mt-1 text-xs text-gray-500">Used for client WhatsApp support links.</p>
           </div>
           <div>
+            <label class="block text-sm text-gray-700">Company Admin Email</label>
+            <input type="email" name="company.admin_email" value="{{ old('company.admin_email', $company['admin_email'] ?? '') }}" class="mt-1 w-full rounded border p-2" placeholder="admin@example.com" />
+            @error('company.admin_email')
+              <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+            @enderror
+            <p class="mt-1 text-xs text-gray-500">Used for internal notifications (e.g., retainer summaries).</p>
+          </div>
+          <div>
             <button class="rounded bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700">Save Settings</button>
           </div>
         </form>
@@ -50,6 +58,17 @@
               <label class="block text-sm text-gray-700">Weekly Passport Bonus (KES per 3)</label>
               <input type="number" step="1" min="0" name="commission.bonus.passport_weekly" value="{{ old('commission.bonus.passport_weekly', $commissions['passport_weekly_bonus'] ?? 5000) }}" class="mt-1 w-full rounded border p-2" />
               @error('commission.bonus.passport_weekly')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+            </div>
+            <div>
+              <label class="block text-sm text-gray-700">Retainer (KES when target achieved)</label>
+              <input type="number" step="1" min="0" name="commission.retainer.amount" value="{{ old('commission.retainer.amount', $commissions['retainer_amount'] ?? 30000) }}" class="mt-1 w-full rounded border p-2" />
+              @error('commission.retainer.amount')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+            </div>
+            <div>
+              <label class="block text-sm text-gray-700">Payout Day (1–28)</label>
+              <input type="number" min="1" max="28" step="1" name="commission.payout.day" value="{{ old('commission.payout.day', $commissions['payout_day'] ?? 15) }}" class="mt-1 w-full rounded border p-2" />
+              @error('commission.payout.day')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+              <p class="mt-1 text-xs text-gray-500">Day of month to run payouts. Use a server cron: php artisan commissions:payout</p>
             </div>
           </div>
           <div>

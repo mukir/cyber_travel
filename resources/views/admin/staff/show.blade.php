@@ -65,6 +65,10 @@
                         @csrf
                         <button class="px-4 py-2 rounded text-white {{ $staff->is_active ? 'bg-gray-700' : 'bg-emerald-700' }}">{{ $staff->is_active ? 'Deactivate' : 'Activate' }}</button>
                     </form>
+                    <form method="POST" action="{{ route('admin.staff.makeReception', $staff) }}" onsubmit="return confirm('Convert this user to Reception role?');">
+                        @csrf
+                        <button class="px-4 py-2 rounded text-white bg-amber-700">Make Reception</button>
+                    </form>
                     <form method="POST" action="{{ route('admin.staff.promote', $staff) }}" onsubmit="return confirm('Promote this staff member to admin?');">
                         @csrf
                         <button class="px-4 py-2 rounded text-white bg-gray-800">Make Admin</button>
@@ -80,4 +84,3 @@
         </div>
     </div>
 </x-app-layout>
-
