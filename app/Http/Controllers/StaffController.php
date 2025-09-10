@@ -7,20 +7,22 @@ class StaffController extends Controller
     public function clients()
     {
         $user = auth()->user();
-        $clientIds = \App\Models\ClientProfile::where('sales_rep_id', $user->id)->pluck('user_id');
-        $query = \App\Models\User::whereIn('id', $clientIds)->orderBy('name');
+        // Join client profiles to allow sorting by latest assignment and searching phone
         $q = trim((string) request('q'));
+        $query = \App\Models\User::leftJoin('client_profiles as cp', 'cp.user_id', '=', 'users.id')
+            ->where('users.role', \App\Enums\UserRole::Client)
+            ->where('cp.sales_rep_id', $user->id)
+            ->select('users.*', 'cp.phone as cp_phone', 'cp.updated_at as cp_updated_at');
         if ($q !== '') {
-            $phoneIds = \App\Models\ClientProfile::where('sales_rep_id', $user->id)
-                ->where('phone', 'like', '%' . preg_replace('/\D+/', '', $q) . '%')
-                ->pluck('user_id');
-            $query->where(function ($w) use ($q, $phoneIds) {
-                $w->where('name', 'like', '%' . $q . '%')
-                  ->orWhere('email', 'like', '%' . $q . '%')
-                  ->orWhereIn('id', $phoneIds);
+            $digits = preg_replace('/\D+/', '', $q);
+            $query->where(function ($w) use ($q, $digits) {
+                $w->where('users.name', 'like', '%' . $q . '%')
+                  ->orWhere('users.email', 'like', '%' . $q . '%')
+                  ->orWhere('cp.phone', 'like', '%' . $digits . '%');
             });
         }
-        $clients = $query->paginate(15)->withQueryString();
+        $clients = $query->orderByDesc('cp_updated_at')->orderByDesc('users.created_at')
+            ->paginate(15)->withQueryString();
         // Map phone from profile and latest booking summary
         $profiles = \App\Models\ClientProfile::whereIn('user_id', $clients->pluck('id'))->get()->keyBy('user_id');
         $latestBookings = \App\Models\Booking::with(['job','package'])

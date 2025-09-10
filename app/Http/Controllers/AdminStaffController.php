@@ -16,7 +16,7 @@ class AdminStaffController extends Controller
         $q = trim((string) $request->input('q'));
         $status = (string) $request->input('status', 'all'); // all|active|inactive
 
-        $query = User::where('role', UserRole::Staff);
+        $query = User::whereIn('role', [UserRole::Staff, UserRole::Reception]);
         if ($q !== '') {
             $query->where(function($x) use ($q) {
                 $x->where('name', 'like', "%{$q}%")
