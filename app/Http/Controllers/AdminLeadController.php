@@ -123,11 +123,14 @@ class AdminLeadController extends Controller
         $profile->status = 'Confirmed';
         $profile->save();
 
+        // Update lead stage/status to won/closed on approval and clear follow-up
+        $lead->update(['stage' => 'won', 'status' => 'closed', 'next_follow_up' => null]);
+
         try {
             \App\Models\LeadNote::create([
                 'lead_id' => $lead->id,
                 'sales_rep_id' => auth()->id(),
-                'content' => 'Lead approved and client status set to Confirmed.',
+                'content' => 'Lead approved: client confirmed; stage=won, status=closed.',
                 'next_follow_up' => null,
             ]);
         } catch (\Throwable $e) {
