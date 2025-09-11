@@ -12,6 +12,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminLeadController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -152,8 +153,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/leads/{lead}', [\App\Http\Controllers\AdminLeadController::class, 'show'])->name('leads.show');
         Route::post('/leads/{lead}/note', [\App\Http\Controllers\AdminLeadController::class, 'saveNote'])->name('leads.note');
 
-        Route::post('/leads/{lead}/approve', [\\App\\Http\\Controllers\\AdminLeadController::class, 'approve'])->name('leads.approve');
-        Route::post('/leads/{lead}/create-account', [\\App\\Http\\Controllers\\AdminLeadController::class, 'createAccount'])->name('leads.create_account');
+        Route::post('/leads/{lead}/approve', [AdminLeadController::class, 'approve'])->name('leads.approve');
+        Route::post('/leads/{lead}/create-account', [AdminLeadController::class, 'createAccount'])->name('leads.create_account');
         // Countries management
         Route::resource('countries', \App\Http\Controllers\AdminCountryController::class)->names('countries')->except(['show']);
 
