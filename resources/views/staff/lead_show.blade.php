@@ -41,7 +41,18 @@
           </div>
         @endif
 
-        <div class="mt-6">
+        <div class="mt-6 flex gap-2">
+          @if($lead->client_id)
+            <form method="POST" action="{{ route('staff.leads.approve', $lead->id) }}" onsubmit="return confirm('Approve this lead and mark client as Confirmed?');">
+              @csrf
+              <button class="px-4 py-2 rounded bg-emerald-600 text-white">Approve & Confirm Client</button>
+            </form>
+          @else
+            <form method="POST" action="{{ route('staff.leads.create_account', $lead->id) }}" onsubmit="return confirm('Create a client account for this lead?');">
+              @csrf
+              <button class="px-4 py-2 rounded bg-emerald-600 text-white">Create Account</button>
+            </form>
+          @endif
           <a href="{{ route('staff.leads') }}" class="px-4 py-2 rounded border">Back</a>
         </div>
       </div>

@@ -51,6 +51,17 @@
 
                 <div class="mt-6 flex gap-2">
                     <a href="{{ route('admin.leads.edit', $lead) }}" class="px-4 py-2 rounded bg-indigo-600 text-white">Edit</a>
+                    @if($lead->client_id)
+                        <form method="POST" action="{{ route('admin.leads.approve', $lead) }}" onsubmit="return confirm('Approve this lead and mark client as Confirmed?');">
+                            @csrf
+                            <button class="px-4 py-2 rounded bg-emerald-600 text-white">Approve & Confirm Client</button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('admin.leads.create_account', $lead) }}" onsubmit="return confirm('Create a client account for this lead?');">
+                            @csrf
+                            <button class="px-4 py-2 rounded bg-emerald-600 text-white">Create Account</button>
+                        </form>
+                    @endif
                     <a href="{{ route('admin.leads.index') }}" class="px-4 py-2 rounded border">Back</a>
                 </div>
             </div>

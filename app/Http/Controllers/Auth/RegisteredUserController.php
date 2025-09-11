@@ -105,6 +105,22 @@ class RegisteredUserController extends Controller
                     if (!$profile->name) { $profile->name = $user->name; }
                     if (!$profile->email) { $profile->email = $user->email; }
                     $profile->save();
+
+                    // Create a corresponding lead for this newly registered client
+                    try {
+                        \App\Models\Lead::create([
+                            'sales_rep_id' => $assignId,
+                            'client_id' => $user->id,
+                            'name' => $profile->name ?: $user->name,
+                            'email' => $profile->email ?: $user->email,
+                            'phone' => $profile->phone ?? null,
+                            'stage' => 'new',
+                            'status' => 'open',
+                            'notes' => json_encode(['source' => 'registration']),
+                        ]);
+                    } catch (\Throwable $e2) {
+                        // ignore lead creation failures
+                    }
                 }
             }
         } catch (\Throwable $e) {

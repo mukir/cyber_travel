@@ -107,4 +107,90 @@ class AdminLeadController extends Controller
         $lead->delete();
         return redirect()->route('admin.leads.index')->with('success', 'Lead deleted');
     }
+
+    public function approve(Lead $lead)
+    {
+        // Approve only if the lead is associated with a client account
+        if (!$lead->client_id) {
+            return back()->with('error', 'This lead has no client account yet. Create the account first.');
+        }
+
+        $profile = \App\Models\ClientProfile::firstOrNew(['user_id' => $lead->client_id]);
+        if (!$profile->name) { $profile->name = $lead->name; }
+        if (!$profile->email) { $profile->email = $lead->email; }
+        if (!$profile->phone && $lead->phone) { $profile->phone = $lead->phone; }
+        if (!$profile->sales_rep_id && $lead->sales_rep_id) { $profile->sales_rep_id = $lead->sales_rep_id; }
+        $profile->status = 'Confirmed';
+        $profile->save();
+
+        try {
+            \App\Models\LeadNote::create([
+                'lead_id' => $lead->id,
+                'sales_rep_id' => auth()->id(),
+                'content' => 'Lead approved and client status set to Confirmed.',
+                'next_follow_up' => null,
+            ]);
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        return back()->with('success', 'Client confirmed from lead.');
+    }
+
+    public function createAccount(Lead $lead)
+    {
+        if ($lead->client_id) {
+            return back()->with('info', 'Lead is already linked to a client account.');
+        }
+
+        // If an existing client account matches the email, link instead of creating
+        $existing = null;
+        if ($lead->email) {
+            $existing = \App\Models\User::where('email', $lead->email)->first();
+        }
+
+        if ($existing && (method_exists($existing, 'is_client') ? $existing->is_client() : ($existing->role === 'client'))) {
+            $lead->client_id = $existing->id;
+            $lead->save();
+            \App\Models\ClientProfile::updateOrCreate(
+                ['user_id' => $existing->id],
+                [
+                    'name' => $lead->name ?: $existing->name,
+                    'email' => $lead->email ?: $existing->email,
+                    'phone' => $lead->phone,
+                    'sales_rep_id' => $lead->sales_rep_id,
+                ]
+            );
+            return back()->with('success', 'Linked lead to existing client account.');
+        }
+
+        // Require an email to create an account
+        if (!$lead->email) {
+            return back()->with('error', 'Email is required to create a client account. Please add an email to this lead.');
+        }
+
+        // Create a new client user with a random password
+        $password = \Illuminate\Support\Str::random(12);
+        $user = \App\Models\User::create([
+            'name' => $lead->name ?: 'Client',
+            'email' => $lead->email,
+            'password' => \Illuminate\Support\Facades\Hash::make($password),
+            'role' => \App\Enums\UserRole::Client,
+        ]);
+
+        \App\Models\ClientProfile::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'name' => $lead->name ?: $user->name,
+                'email' => $lead->email ?: $user->email,
+                'phone' => $lead->phone,
+                'sales_rep_id' => $lead->sales_rep_id,
+            ]
+        );
+
+        $lead->client_id = $user->id;
+        $lead->save();
+
+        return back()->with('success', 'Client account created and linked to lead.');
+    }
 }

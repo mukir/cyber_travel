@@ -152,6 +152,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/leads/{lead}', [\App\Http\Controllers\AdminLeadController::class, 'show'])->name('leads.show');
         Route::post('/leads/{lead}/note', [\App\Http\Controllers\AdminLeadController::class, 'saveNote'])->name('leads.note');
 
+        Route::post('/leads/{lead}/approve', [\\App\\Http\\Controllers\\AdminLeadController::class, 'approve'])->name('leads.approve');
+        Route::post('/leads/{lead}/create-account', [\\App\\Http\\Controllers\\AdminLeadController::class, 'createAccount'])->name('leads.create_account');
         // Countries management
         Route::resource('countries', \App\Http\Controllers\AdminCountryController::class)->names('countries')->except(['show']);
 
@@ -182,6 +184,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/notes', [StaffController::class, 'notes'])->name('notes');
         Route::get('/reminders', [StaffController::class, 'reminders'])->name('reminders');
         Route::post('/leads/{lead}/note', [StaffController::class, 'saveLeadNote'])->name('leads.note');
+        Route::post('/leads/{lead}/approve', [StaffController::class, 'approveLead'])->name('leads.approve');
+        Route::post('/leads/{lead}/create-account', [StaffController::class, 'createLeadAccount'])->name('leads.create_account');
         Route::get('/commissions', [StaffController::class, 'commissions'])->name('commissions');
         Route::get('/reports', [StaffController::class, 'reports'])->name('reports');
         Route::get('/reports/commissions.csv', [StaffController::class, 'commissionsCsv'])->name('reports.commissions.csv');
