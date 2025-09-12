@@ -78,6 +78,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage / Status</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Follow-up</th>
               <th class="px-6 py-3"></th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -120,10 +121,24 @@
                     <button class="rounded bg-slate-700 px-3 py-1.5 text-white text-sm">Save</button>
                   </form>
                 </td>
+                <td class="px-6 py-4 text-sm text-right whitespace-nowrap">
+                  <a href="{{ route('staff.leads.show', $lead->id) }}" class="underline mr-2">View</a>
+                  @if($lead->client_id)
+                    <form method="POST" action="{{ route('staff.leads.approve', $lead->id) }}" class="inline" onsubmit="return confirm('Approve this lead and mark client as Confirmed?');">
+                      @csrf
+                      <button class="rounded bg-emerald-600 px-3 py-1.5 text-white text-sm">Approve</button>
+                    </form>
+                  @else
+                    <form method="POST" action="{{ route('staff.leads.create_account', $lead->id) }}" class="inline" onsubmit="return confirm('Create a client account for this lead?');">
+                      @csrf
+                      <button class="rounded bg-indigo-600 px-3 py-1.5 text-white text-sm">Create Account</button>
+                    </form>
+                  @endif
+                </td>
               </tr>
             @empty
               <tr>
-                <td colspan="5" class="px-6 py-6 text-sm text-gray-500">No leads yet.</td>
+                <td colspan="6" class="px-6 py-6 text-sm text-gray-500">No leads yet.</td>
               </tr>
             @endforelse
           </tbody>
