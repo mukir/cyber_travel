@@ -85,7 +85,10 @@ class StaffController extends Controller
     {
         $user = auth()->user();
         abort_unless($lead && $lead->sales_rep_id === $user->id, 404);
-        $lead->load(['leadNotes' => function($q){ $q->orderByDesc('created_at'); }]);
+        $lead->load([
+            'leadNotes' => function($q){ $q->orderByDesc('created_at'); },
+            'leadNotes.salesRep',
+        ]);
         return view('staff.lead_show', compact('lead'));
     }
 

@@ -18,7 +18,8 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    // Use file sessions to avoid DB dependency and .env reliance
+    'driver' => 'file',
 
     /*
     |--------------------------------------------------------------------------
