@@ -40,6 +40,7 @@
                             <th class="px-4 py-2 text-left">Name</th>
                             <th class="px-4 py-2 text-left">Email</th>
                             <th class="px-4 py-2 text-left">Phone</th>
+                            <th class="px-4 py-2 text-left">Category</th>
                             <th class="px-4 py-2 text-left">Assigned To</th>
                             <th class="px-4 py-2">Actions</th>
                         </tr>
@@ -56,6 +57,13 @@
                                     @endphp
                                     {{ $profile?->phone ?: '—' }}
                                 </td>
+                                <td class="px-4 py-2">
+                                    @php
+                                        $category = (strtolower((string)($profile?->status ?? '')) === 'confirmed') ? 'Confirmed' : 'New';
+                                        $badge = $category === 'Confirmed' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200';
+                                    @endphp
+                                    <span class="text-xs font-medium px-2 py-1 rounded border {{ $badge }}">{{ $category }}</span>
+                                </td>
                                 <td class="px-4 py-2">{{ optional(\App\Models\User::find($profile?->sales_rep_id))->name ?: '—' }}</td>
                                 <td class="px-4 py-2 space-x-3 whitespace-nowrap">
                                     <a href="{{ route('admin.clients.show', $client) }}" class="text-indigo-600 hover:underline">View</a>
@@ -63,7 +71,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-2">No clients found.</td>
+                                <td colspan="7" class="px-4 py-2">No clients found.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -78,3 +86,4 @@
         </div>
     </div>
 </x-app-layout>
+
