@@ -6,7 +6,12 @@
   <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
       <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-        @php($requiredDocs = \App\Models\DocumentType::where('active', true)->where('required', true)->pluck('key')->all())
+        @php
+          $requiredDocs = \App\Models\DocumentType::where('active', true)
+            ->where('required', true)
+            ->pluck('key')
+            ->all();
+        @endphp
         <form method="GET" action="{{ route('staff.clients') }}" class="mb-4 flex items-center gap-2">
           <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Search name, email or phone" class="rounded border p-2 w-64" />
           <button class="rounded bg-emerald-600 px-3 py-2 text-white text-sm">Search</button>
@@ -29,15 +34,27 @@
           </thead>
           <tbody>
             @forelse($clients as $c)
-              @php($p = $profiles->get($c->id))
-              @php($b = optional($latestBookings->get($c->id))->first())
-              @php($balance = $b ? max(((float)$b->total_amount) - ((float)$b->amount_paid), 0) : null)
-              @php($docs = \App\Models\ClientDocument::where('user_id', $c->id)->pluck('type')->all())
-              @php($missing = array_values(array_diff($requiredDocs, $docs)))
+              @php
+                $p = $profiles->get($c->id);
+              @endphp
+              @php
+                $b = optional($latestBookings->get($c->id))->first();
+              @endphp
+              @php
+                $balance = $b ? max(((float)$b->total_amount) - ((float)$b->amount_paid), 0) : null;
+              @endphp
+              @php
+                $docs = \App\Models\ClientDocument::where('user_id', $c->id)
+                  ->pluck('type')
+                  ->all();
+              @endphp
+              @php
+                $missing = array_values(array_diff($requiredDocs, $docs));
+              @endphp
               <tr class="border-t align-top">
                 <td class="px-4 py-2">{{ $c->name }}</td>
                 <td class="px-4 py-2">{{ $c->email }}</td>
-                <td class="px-4 py-2">{{ $p?->phone ?: '—' }}</td>
+                <td class="px-4 py-2">{{ $p?->phone ?: '�?"' }}</td>
                 <td class="px-4 py-2">
                   @php
                     $category = (strtolower((string)($p?->status ?? '')) === 'confirmed') ? 'Confirmed' : 'New';
@@ -45,8 +62,8 @@
                   @endphp
                   <span class="text-xs font-medium px-2 py-1 rounded border {{ $badge }}">{{ $category }}</span>
                 </td>
-                <td class="px-4 py-2">{{ optional($b?->job)->name ?: '—' }}</td>
-                <td class="px-4 py-2">{{ $b ? (number_format($balance, 2).' '.$b->currency) : '—' }}</td>
+                <td class="px-4 py-2">{{ optional($b?->job)->name ?: '�?"' }}</td>
+                <td class="px-4 py-2">{{ $b ? (number_format($balance, 2).' '.$b->currency) : '�?"' }}</td>
                 <td class="px-4 py-2">{{ count($missing) }}</td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm">
                   <a href="{{ route('staff.clients.show', $c) }}" class="text-indigo-700 hover:underline">View</a>
@@ -64,4 +81,3 @@
     </div>
   </div>
 </x-app-layout>
-
